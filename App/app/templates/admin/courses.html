@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Курсы — Админ{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;">
+    <h1>Курсы</h1>
+    <div style="display:flex;gap:.75rem;">
+        <a href="{{ url_for('admin.course_new') }}" class="btn btn--primary">+ Новый курс</a>
+        <a href="{{ url_for('admin.index') }}" class="btn btn--sm">← Назад</a>
+    </div>
+</div>
+
+<div class="table-wrap">
+<table class="sketch-table">
+    <thead>
+        <tr><th>#</th><th>Название</th><th>Язык</th><th>Уровень</th><th>Преподаватель</th><th>Статус</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for c in courses %}
+        <tr>
+            <td>{{ c.id }}</td>
+            <td>{{ c.name }}</td>
+            <td>{{ c.language }}</td>
+            <td>{{ c.level.value }}</td>
+            <td>{{ c.teacher.full_name }}</td>
+            <td>{% if c.is_active %}<span class="badge badge--teacher">активен</span>{% else %}<span class="badge badge--student">архив</span>{% endif %}</td>
+            <td style="display:flex;gap:.5rem;">
+                <a href="{{ url_for('admin.course_edit', course_id=c.id) }}" class="btn btn--sm">✏️</a>
+                <form method="POST" action="{{ url_for('admin.course_delete', course_id=c.id) }}" onsubmit="return confirm('Удалить курс?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn--sm btn--danger">🗑</button>
+                </form>
+            </td>
+        </tr>
+    {% else %}
+        <tr><td colspan="7" style="text-align:center;">Курсов нет</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

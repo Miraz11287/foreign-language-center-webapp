@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Занятия — Админ{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;">
+    <h1>Занятия</h1>
+    <div style="display:flex;gap:.75rem;">
+        <a href="{{ url_for('admin.lesson_new') }}" class="btn btn--primary">+ Новое занятие</a>
+        <a href="{{ url_for('admin.index') }}" class="btn btn--sm">← Назад</a>
+    </div>
+</div>
+
+<div class="table-wrap">
+<table class="sketch-table">
+    <thead>
+        <tr><th>#</th><th>Курс</th><th>Преподаватель</th><th>Дата и время</th><th>Ауд.</th><th>Мест</th><th>Записано</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for l in lessons %}
+        <tr>
+            <td>{{ l.id }}</td>
+            <td>{{ l.course.name }}</td>
+            <td>{{ l.teacher.full_name }}</td>
+            <td>{{ l.starts_at.strftime('%d.%m.%Y %H:%M') }}</td>
+            <td>{{ l.room or '—' }}</td>
+            <td>{{ l.capacity }}</td>
+            <td>{{ l.enrolled_count }}</td>
+            <td style="display:flex;gap:.5rem;">
+                <a href="{{ url_for('admin.lesson_edit', lesson_id=l.id) }}" class="btn btn--sm">✏️</a>
+                <form method="POST" action="{{ url_for('admin.lesson_delete', lesson_id=l.id) }}" onsubmit="return confirm('Удалить занятие?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn--sm btn--danger">🗑</button>
+                </form>
+            </td>
+        </tr>
+    {% else %}
+        <tr><td colspan="8" style="text-align:center;">Занятий нет</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

@@ -1,6 +1,27 @@
 {% extends 'base.html' %}
 {% block title %}Панель администратора — LangCenter{% endblock %}
+
 {% block content %}
 <h1>Панель администратора</h1>
-<p>Часть 3 — будет реализовано.</p>
+
+<div class="features" style="margin-top:1.5rem;">
+    <div class="feature-card">
+        <span class="feature-card__icon">👥</span>
+        <h3>{{ stats.users }}</h3>
+        <p>Пользователей</p>
+        <a href="{{ url_for('admin.users') }}" class="btn btn--sm" style="margin-top:.75rem;">Управлять</a>
+    </div>
+    <div class="feature-card">
+        <span class="feature-card__icon">📚</span>
+        <h3>{{ stats.courses }}</h3>
+        <p>Курсов</p>
+        <a href="{{ url_for('admin.courses') }}" class="btn btn--sm" style="margin-top:.75rem;">Управлять</a>
+    </div>
+    <div class="feature-card">
+        <span class="feature-card__icon">📅</span>
+        <h3>{{ stats.lessons }}</h3>
+        <p>Занятий</p>
+        <a href="{{ url_for('admin.lessons') }}" class="btn btn--sm" style="margin-top:.75rem;">Управлять</a>
+    </div>
+</div>
 {% endblock %}

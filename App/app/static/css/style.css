@@ -1,6 +1,333 @@
-/* placeholder — стиль будет в Части 7 */
-body { font-family: sans-serif; margin: 0; padding: 1rem; }
-.flash { padding: .75rem; margin-bottom: 1rem; border: 1px solid; }
-.flash--error { background: #fdd; border-color: #f99; }
-.flash--success { background: #dfd; border-color: #9f9; }
-.hero { text-align: center; padding: 4rem 1rem; }
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&display=swap');
+
+/* ─── Variables ──────────────────────────────────────────────────────────── */
+:root {
+    --paper:        #faf6f0;
+    --paper-dark:   #f0e6d2;
+    --paper-line:   rgba(180, 155, 120, 0.18);
+    --ink:          #2c2416;
+    --ink-soft:     #6b5d4f;
+    --border:       #9b8468;
+    --accent:       #4a7c59;
+    --accent-hover: #3a6347;
+    --accent2:      #c0846a;
+    --danger:       #b54a3a;
+    --success:      #3a7a4a;
+    --radius-sketch: 255px 12px 230px 10px / 10px 230px 12px 255px;
+    --radius-sketch-sm: 120px 6px 110px 5px / 5px 110px 6px 120px;
+}
+
+/* ─── Reset ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+a { color: inherit; text-decoration: none; }
+
+/* ─── Base ───────────────────────────────────────────────────────────────── */
+body {
+    font-family: 'Patrick Hand', sans-serif;
+    font-size: 1.05rem;
+    background-color: var(--paper);
+    color: var(--ink);
+    line-height: 1.65;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+
+    /* lined-paper effect */
+    background-image:
+        repeating-linear-gradient(
+            transparent,
+            transparent 31px,
+            var(--paper-line) 32px
+        );
+    background-attachment: fixed;
+}
+
+h1, h2, h3, h4, h5 {
+    font-family: 'Caveat', cursive;
+    line-height: 1.2;
+}
+
+/* ─── Navbar ─────────────────────────────────────────────────────────────── */
+header {
+    background: var(--paper-dark);
+    border-bottom: 2px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.navbar {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0.7rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.nav-logo {
+    font-family: 'Caveat', cursive;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: .02em;
+}
+.nav-logo span { color: var(--accent); }
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 1.4rem;
+    flex-wrap: wrap;
+}
+
+.nav-links a {
+    font-family: 'Caveat', cursive;
+    font-size: 1.15rem;
+    color: var(--ink);
+    position: relative;
+    padding-bottom: 2px;
+}
+.nav-links a::after {
+    content: '';
+    position: absolute;
+    left: 0; bottom: 0;
+    width: 0; height: 2px;
+    background: var(--accent);
+    transition: width .2s;
+}
+.nav-links a:hover::after { width: 100%; }
+
+.nav-user {
+    font-family: 'Caveat', cursive;
+    font-size: 1.05rem;
+    color: var(--ink-soft);
+    padding: 0 .5rem;
+    border-left: 2px solid var(--border);
+}
+
+/* ─── Container ──────────────────────────────────────────────────────────── */
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    flex: 1;
+}
+
+/* ─── Flash messages ─────────────────────────────────────────────────────── */
+.flash {
+    padding: .75rem 1.1rem;
+    margin-bottom: 1rem;
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-sketch-sm);
+    font-family: 'Caveat', cursive;
+    font-size: 1.05rem;
+}
+.flash--success { background: #e8f5e9; border-color: var(--success); color: var(--success); }
+.flash--error   { background: #fdecea; border-color: var(--danger);  color: var(--danger);  }
+.flash--info    { background: #e8f0fe; border-color: #4a6fa5; color: #4a6fa5; }
+
+/* ─── Buttons ────────────────────────────────────────────────────────────── */
+.btn {
+    display: inline-block;
+    font-family: 'Caveat', cursive;
+    font-size: 1.15rem;
+    padding: .5rem 1.6rem;
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-sketch-sm);
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 3px 3px 0 var(--ink);
+    transition: transform .1s, box-shadow .1s;
+    text-align: center;
+}
+.btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--ink);
+}
+.btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--ink);
+}
+.btn--primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent-hover);
+    box-shadow: 3px 3px 0 var(--accent-hover);
+}
+.btn--primary:hover { box-shadow: 4px 4px 0 var(--accent-hover); }
+.btn--danger {
+    background: var(--danger);
+    color: #fff;
+    border-color: #8b2a1e;
+    box-shadow: 3px 3px 0 #8b2a1e;
+}
+.btn--sm { font-size: 1rem; padding: .3rem 1rem; }
+
+/* ─── Cards ──────────────────────────────────────────────────────────────── */
+.card {
+    background: #fffdf8;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sketch);
+    box-shadow: 4px 4px 0 var(--border);
+    padding: 1.5rem;
+}
+
+/* ─── Form card ──────────────────────────────────────────────────────────── */
+.form-card {
+    max-width: 480px;
+    margin: 2.5rem auto;
+    background: #fffdf8;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sketch);
+    box-shadow: 5px 5px 0 var(--border);
+    padding: 2rem 2.2rem 1.8rem;
+}
+
+.form-title {
+    font-size: 2rem;
+    margin-bottom: 1.2rem;
+    text-align: center;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    margin-bottom: .9rem;
+}
+.form-group label {
+    font-family: 'Caveat', cursive;
+    font-size: 1.05rem;
+    color: var(--ink-soft);
+}
+.form-group--check {
+    flex-direction: row;
+    align-items: center;
+    gap: .5rem;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+    width: 100%;
+    font-family: 'Patrick Hand', sans-serif;
+    font-size: 1rem;
+    padding: .45rem .75rem;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    background: rgba(255,255,255,.75);
+    color: var(--ink);
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 2px 2px 0 var(--accent);
+}
+
+.form-error {
+    font-size: .9rem;
+    color: var(--danger);
+    font-family: 'Caveat', cursive;
+}
+.form-hint {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: .95rem;
+    color: var(--ink-soft);
+}
+.form-hint a {
+    color: var(--accent);
+    border-bottom: 1px dashed var(--accent);
+}
+
+.form-card .btn--primary {
+    width: 100%;
+    margin-top: .5rem;
+}
+
+/* ─── Hero ───────────────────────────────────────────────────────────────── */
+.hero {
+    text-align: center;
+    padding: 5rem 1rem 4rem;
+    position: relative;
+}
+.hero__title {
+    font-size: clamp(2.8rem, 8vw, 5rem);
+    font-weight: 700;
+    margin-bottom: .75rem;
+    line-height: 1.1;
+}
+.hero__title span { color: var(--accent); }
+.hero__sub {
+    font-size: 1.25rem;
+    color: var(--ink-soft);
+    margin-bottom: 2rem;
+}
+.hero__actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+/* ─── Features grid ──────────────────────────────────────────────────────── */
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-top: 3rem;
+}
+.feature-card {
+    background: #fffdf8;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sketch);
+    box-shadow: 4px 4px 0 var(--border);
+    padding: 1.4rem 1.2rem;
+    text-align: center;
+}
+.feature-card__icon {
+    font-size: 2.5rem;
+    margin-bottom: .5rem;
+    display: block;
+}
+.feature-card h3 {
+    font-size: 1.4rem;
+    margin-bottom: .4rem;
+}
+.feature-card p {
+    font-size: .95rem;
+    color: var(--ink-soft);
+}
+
+/* ─── Footer ─────────────────────────────────────────────────────────────── */
+footer {
+    border-top: 2px solid var(--border);
+    background: var(--paper-dark);
+    text-align: center;
+    padding: 1rem;
+    font-family: 'Caveat', cursive;
+    font-size: 1rem;
+    color: var(--ink-soft);
+}
+
+/* ─── Divider ────────────────────────────────────────────────────────────── */
+.divider {
+    border: none;
+    border-top: 2px dashed var(--border);
+    margin: 2rem 0;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+    .form-row { grid-template-columns: 1fr; }
+    .navbar { flex-direction: column; align-items: flex-start; }
+    .nav-links { gap: .9rem; }
+}

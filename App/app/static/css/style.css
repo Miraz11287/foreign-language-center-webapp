@@ -1,0 +1,6 @@
+/* placeholder — стиль будет в Части 7 */
+body { font-family: sans-serif; margin: 0; padding: 1rem; }
+.flash { padding: .75rem; margin-bottom: 1rem; border: 1px solid; }
+.flash--error { background: #fdd; border-color: #f99; }
+.flash--success { background: #dfd; border-color: #9f9; }
+.hero { text-align: center; padding: 4rem 1rem; }

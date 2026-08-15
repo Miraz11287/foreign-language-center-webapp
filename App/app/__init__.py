@@ -33,4 +33,7 @@ def create_app(config_name=None):
     from app.admin import admin_bp
     app.register_blueprint(admin_bp, url_prefix='/admin')
 
+    from app.commands import register_commands
+    register_commands(app)
+
     return app

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Регистрация — LangCenter{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    <h1 class="form-title">Регистрация</h1>
+    <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
+
+        <div class="form-row">
+            <div class="form-group">
+                {{ form.first_name.label }}
+                {{ form.first_name(placeholder='Иван') }}
+                {% for e in form.first_name.errors %}
+                    <span class="form-error">{{ e }}</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.last_name.label }}
+                {{ form.last_name(placeholder='Иванов') }}
+                {% for e in form.last_name.errors %}
+                    <span class="form-error">{{ e }}</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            {{ form.email.label }}
+            {{ form.email(placeholder='you@example.com') }}
+            {% for e in form.email.errors %}
+                <span class="form-error">{{ e }}</span>
+            {% endfor %}
+        </div>
+
+        <div class="form-group">
+            {{ form.password.label }}
+            {{ form.password(placeholder='Минимум 6 символов') }}
+            {% for e in form.password.errors %}
+                <span class="form-error">{{ e }}</span>
+            {% endfor %}
+        </div>
+
+        <div class="form-group">
+            {{ form.password2.label }}
+            {{ form.password2(placeholder='Повторите пароль') }}
+            {% for e in form.password2.errors %}
+                <span class="form-error">{{ e }}</span>
+            {% endfor %}
+        </div>
+
+        {{ form.submit(class='btn btn--primary') }}
+    </form>
+    <p class="form-hint">Уже есть аккаунт? <a href="{{ url_for('auth.login') }}">Войти</a></p>
+</div>
+{% endblock %}

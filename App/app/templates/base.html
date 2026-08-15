@@ -9,12 +9,26 @@
 </head>
 <body>
 <header>
-    <nav>
+    <nav class="navbar">
         <a href="{{ url_for('main.index') }}" class="nav-logo">LangCenter</a>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('main.index') }}">Главная</a></li>
+            {% if current_user.is_authenticated %}
+                {% if current_user.is_admin() %}
+                    <li><a href="{{ url_for('admin.index') }}">Панель</a></li>
+                {% endif %}
+                <li><a href="{{ url_for('main.schedule') }}">Расписание</a></li>
+                <li class="nav-user">{{ current_user.full_name }}</li>
+                <li><a href="{{ url_for('auth.logout') }}">Выйти</a></li>
+            {% else %}
+                <li><a href="{{ url_for('auth.login') }}">Войти</a></li>
+                <li><a href="{{ url_for('auth.register') }}">Регистрация</a></li>
+            {% endif %}
+        </ul>
     </nav>
 </header>
 
-<main>
+<main class="container">
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}

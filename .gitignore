@@ -1,7 +1,7 @@
 # Secrets
 .env
 
-# LaTeX build artifacts
+# LaTeX 
 *.aux
 *.log
 *.out
@@ -19,11 +19,30 @@
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
 .venv/
 venv/
 env/
 *.egg-info/
+dist/
+build/
 
-# Misc
+# Flask / migrations (keep structure, ignore cache)
+instance/
+.webassets-cache
+
+# Docker
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
 .DS_Store
 Thumbs.db
+desktop.ini
+
+node_modules/

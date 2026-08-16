@@ -50,3 +50,33 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('main.index'))
+
+
+@auth_bp.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    from app.auth.profile_forms import EditProfileForm, ChangePasswordForm
+
+    profile_form  = EditProfileForm(obj=current_user, prefix='profile')
+    password_form = ChangePasswordForm(prefix='password')
+
+    if profile_form.submit.data and profile_form.validate():
+        current_user.first_name = profile_form.first_name.data.strip()
+        current_user.last_name  = profile_form.last_name.data.strip()
+        db.session.commit()
+        flash('Profile updated.', 'success')
+        return redirect(url_for('auth.profile'))
+
+    if password_form.submit.data and password_form.validate():
+        if not current_user.check_password(password_form.current.data):
+            flash('Current password is incorrect.', 'error')
+        else:
+            current_user.set_password(password_form.new_pass.data)
+            db.session.commit()
+            flash('Password changed.', 'success')
+        return redirect(url_for('auth.profile'))
+
+    return render_template('auth/profile.html',
+        profile_form=profile_form,
+        password_form=password_form,
+    )

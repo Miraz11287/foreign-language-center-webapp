@@ -24,6 +24,9 @@
                 {% if current_user.is_admin() %}
                     <li><a href="{{ url_for('admin.index') }}">Admin</a></li>
                 {% endif %}
+                {% if current_user.is_student() %}
+                    <li><a href="{{ url_for('main.request_teacher') }}">Become a teacher</a></li>
+                {% endif %}
                 <li class="nav-user">{{ current_user.full_name }}</li>
                 <li><a href="{{ url_for('auth.logout') }}">Log out</a></li>
             {% else %}

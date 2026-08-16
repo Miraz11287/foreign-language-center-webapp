@@ -96,6 +96,43 @@ def schedule():
     )
 
 
+@main_bp.route('/request-teacher', methods=['GET', 'POST'])
+def request_teacher():
+    from flask import redirect, url_for, flash
+    from flask_login import login_required, current_user
+    from flask_wtf import FlaskForm
+    from wtforms import TextAreaField, SubmitField
+    from wtforms.validators import Optional
+    from app.models.teacher_request import TeacherRequest, RequestStatus
+
+    if not current_user.is_authenticated:
+        return redirect(url_for('auth.login'))
+    if current_user.is_teacher() or current_user.is_admin():
+        flash('You already have teacher or admin access.', 'info')
+        return redirect(url_for('main.index'))
+
+    existing = current_user.teacher_requests.filter_by(
+        status=RequestStatus.pending
+    ).first()
+
+    class RequestForm(FlaskForm):
+        message = TextAreaField('Why do you want to become a teacher?', validators=[Optional()])
+        submit  = SubmitField('Submit request')
+
+    form = RequestForm()
+    if form.validate_on_submit():
+        if existing:
+            flash('You already have a pending request.', 'info')
+        else:
+            req = TeacherRequest(user_id=current_user.id, message=form.message.data)
+            db.session.add(req)
+            db.session.commit()
+            flash('Your request has been submitted. We will review it shortly.', 'success')
+        return redirect(url_for('main.index'))
+
+    return render_template('request_teacher.html', form=form, existing=existing)
+
+
 @main_bp.route('/lessons/<int:lesson_id>/enroll', methods=['POST'])
 def enroll(lesson_id):
     # Part 5: enrollment logic

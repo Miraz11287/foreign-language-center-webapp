@@ -20,5 +20,10 @@
         <p>Lessons</p>
         <a href="{{ url_for('admin.lessons') }}" class="btn btn--sm" style="margin-top:.75rem;">Manage</a>
     </div>
+    <div class="feature-card">
+        <h3>{{ stats.requests }}</h3>
+        <p>Pending teacher requests</p>
+        <a href="{{ url_for('admin.teacher_requests') }}" class="btn btn--sm" style="margin-top:.75rem;">Review</a>
+    </div>
 </div>
 {% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Teacher Requests — Admin{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;">
+    <h1>Teacher requests</h1>
+    <a href="{{ url_for('admin.index') }}" class="btn btn--sm">Back</a>
+</div>
+
+<div class="table-wrap">
+<table class="sketch-table">
+    <thead>
+        <tr><th>#</th><th>User</th><th>Email</th><th>Message</th><th>Submitted</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for r in requests %}
+        <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.user.full_name }}</td>
+            <td>{{ r.user.email }}</td>
+            <td style="max-width:260px;">{{ r.message or '—' }}</td>
+            <td>{{ r.created_at.strftime('%d %b %Y') }}</td>
+            <td>
+                <span class="badge badge--{{
+                    'teacher' if r.status.value == 'approved' else
+                    'admin'   if r.status.value == 'pending'  else
+                    'student'
+                }}">{{ r.status.value }}</span>
+            </td>
+            <td>
+                {% if r.status.value == 'pending' %}
+                <div style="display:flex;gap:.5rem;">
+                    <form method="POST" action="{{ url_for('admin.approve_request', req_id=r.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn--sm btn--primary" type="submit">Approve</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin.reject_request', req_id=r.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn--sm btn--danger" type="submit">Reject</button>
+                    </form>
+                </div>
+                {% else %}
+                    <span style="color:var(--ink-soft);font-size:.9rem;">{{ r.reviewed_at.strftime('%d %b') if r.reviewed_at }}</span>
+                {% endif %}
+            </td>
+        </tr>
+    {% else %}
+        <tr><td colspan="7" style="text-align:center;">No requests yet</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

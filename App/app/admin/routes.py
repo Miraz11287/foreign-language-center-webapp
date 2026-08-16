@@ -7,6 +7,7 @@ from app.extensions import db
 from app.models.user import User, Role
 from app.models.course import Course, LanguageLevel
 from app.models.lesson import Lesson
+from app.models.teacher_request import TeacherRequest, RequestStatus
 
 
 def _teacher_choices():
@@ -28,11 +29,49 @@ def _course_choices():
 @admin_required
 def index():
     stats = {
-        'users':   User.query.count(),
-        'courses': Course.query.count(),
-        'lessons': Lesson.query.count(),
+        'users':    User.query.count(),
+        'courses':  Course.query.count(),
+        'lessons':  Lesson.query.count(),
+        'requests': TeacherRequest.query.filter_by(status=RequestStatus.pending).count(),
     }
     return render_template('admin/index.html', stats=stats)
+
+
+# ─── Teacher requests ─────────────────────────────────────────────────────────
+
+@admin_bp.route('/requests')
+@login_required
+@admin_required
+def teacher_requests():
+    requests = TeacherRequest.query.order_by(TeacherRequest.created_at.desc()).all()
+    return render_template('admin/teacher_requests.html', requests=requests)
+
+
+@admin_bp.route('/requests/<int:req_id>/approve', methods=['POST'])
+@login_required
+@admin_required
+def approve_request(req_id):
+    from datetime import datetime, timezone
+    req = db.session.get(TeacherRequest, req_id) or abort(404)
+    req.status = RequestStatus.approved
+    req.reviewed_at = datetime.now(timezone.utc)
+    req.user.role = Role.teacher
+    db.session.commit()
+    flash(f'{req.user.full_name} is now a teacher.', 'success')
+    return redirect(url_for('admin.teacher_requests'))
+
+
+@admin_bp.route('/requests/<int:req_id>/reject', methods=['POST'])
+@login_required
+@admin_required
+def reject_request(req_id):
+    from datetime import datetime, timezone
+    req = db.session.get(TeacherRequest, req_id) or abort(404)
+    req.status = RequestStatus.rejected
+    req.reviewed_at = datetime.now(timezone.utc)
+    db.session.commit()
+    flash(f'Request from {req.user.full_name} rejected.', 'success')
+    return redirect(url_for('admin.teacher_requests'))
 
 
 # ─── Users ───────────────────────────────────────────────────────────────────

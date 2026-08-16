@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Become a Teacher — LangCenter{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    <h1 class="form-title">Become a teacher</h1>
+
+    {% if existing %}
+        <p style="text-align:center;color:var(--ink-soft);">
+            Your request is <strong>pending review</strong>.<br>
+            We will notify you once it has been reviewed.
+        </p>
+    {% else %}
+        <p style="margin-bottom:1.2rem;color:var(--ink-soft);text-align:center;">
+            Tell us a bit about yourself and why you want to teach.
+        </p>
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                {{ form.message.label }}
+                {{ form.message(rows=5, placeholder='Your experience, languages you teach, etc.') }}
+            </div>
+            {{ form.submit(class='btn btn--primary') }}
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

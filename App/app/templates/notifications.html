@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Notifications — LangCenter{% endblock %}
+
+{% block content %}
+<h1>Notifications</h1>
+
+{% if notifications %}
+<div class="notif-list" style="margin-top:1.2rem;">
+    {% for n in notifications %}
+    <div class="notif-item {% if not n.is_read %}notif-item--unread{% endif %}">
+        <div class="notif-item__message">{{ n.message }}</div>
+        <div class="notif-item__meta">
+            <span class="notif-item__date">{{ n.created_at.strftime('%d %b %Y %H:%M') }}</span>
+            {% if n.link %}
+                <a href="{{ n.link }}" class="btn btn--sm">View</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+    <p style="color:var(--ink-soft);margin-top:1.2rem;">No notifications yet.</p>
+{% endif %}
+{% endblock %}

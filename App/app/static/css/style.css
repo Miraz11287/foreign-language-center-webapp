@@ -315,6 +315,54 @@ input:focus, select:focus, textarea:focus {
     color: var(--ink-soft);
 }
 
+/* ─── Notifications ──────────────────────────────────────────────────────── */
+.notif-bell {
+    position: relative;
+    font-family: 'Caveat', cursive;
+    font-size: 1.15rem;
+}
+.notif-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--danger);
+    color: #fff;
+    font-family: 'Patrick Hand', sans-serif;
+    font-size: .7rem;
+    font-weight: 700;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    margin-left: .25rem;
+    vertical-align: middle;
+}
+
+.notif-list { display: flex; flex-direction: column; gap: .75rem; }
+
+.notif-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: .85rem 1.1rem;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    background: #fffdf8;
+    flex-wrap: wrap;
+}
+.notif-item--unread {
+    border-color: var(--accent);
+    background: #f0f7f2;
+}
+.notif-item__message { flex: 1; }
+.notif-item__meta {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    white-space: nowrap;
+}
+.notif-item__date { font-size: .85rem; color: var(--ink-soft); }
+
 /* ─── Footer ─────────────────────────────────────────────────────────────── */
 footer {
     border-top: 2px solid var(--border);

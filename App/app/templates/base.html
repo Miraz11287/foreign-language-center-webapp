@@ -35,6 +35,14 @@
                 {% if current_user.is_student() %}
                     <li><a href="{{ url_for('main.request_teacher') }}">Become a teacher</a></li>
                 {% endif %}
+                <li>
+                    <a href="{{ url_for('notifications.index') }}" class="notif-bell">
+                        Notifications
+                        {% if unread_count > 0 %}
+                            <span class="notif-badge">{{ unread_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
                 <li><a href="{{ url_for('auth.profile') }}" class="nav-user">{{ current_user.full_name }}</a></li>
                 <li><a href="{{ url_for('auth.logout') }}">Log out</a></li>
             {% else %}

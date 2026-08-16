@@ -63,6 +63,16 @@ def grade_lesson(lesson_id):
                 ))
 
         db.session.commit()
+
+        from app.notifications.utils import notify
+        from flask import url_for as _url_for
+        for enrollment in enrollments:
+            notify(
+                enrollment.student_id,
+                f'Your grade for "{lesson.course.name}" on {lesson.starts_at.strftime("%d %b")} has been updated.',
+                _url_for('main.my_progress'),
+            )
+
         flash('Grades saved.', 'success')
         return redirect(url_for('teacher.grade_lesson', lesson_id=lesson_id))
 

@@ -57,6 +57,8 @@ def approve_request(req_id):
     req.reviewed_at = datetime.now(timezone.utc)
     req.user.role = Role.teacher
     db.session.commit()
+    from app.notifications.utils import notify
+    notify(req.user_id, 'Your teacher request has been approved! You now have teacher access.', '/teacher/')
     flash(f'{req.user.full_name} is now a teacher.', 'success')
     return redirect(url_for('admin.teacher_requests'))
 
@@ -70,6 +72,8 @@ def reject_request(req_id):
     req.status = RequestStatus.rejected
     req.reviewed_at = datetime.now(timezone.utc)
     db.session.commit()
+    from app.notifications.utils import notify
+    notify(req.user_id, 'Your teacher request has been reviewed and was not approved.')
     flash(f'Request from {req.user.full_name} rejected.', 'success')
     return redirect(url_for('admin.teacher_requests'))
 

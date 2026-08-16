@@ -37,6 +37,20 @@ def create_app(config_name=None):
     from app.teacher import teacher_bp
     app.register_blueprint(teacher_bp, url_prefix='/teacher')
 
+    from app.notifications import notifications_bp
+    app.register_blueprint(notifications_bp, url_prefix='/notifications')
+
+    @app.context_processor
+    def inject_notifications():
+        from flask_login import current_user
+        if current_user.is_authenticated:
+            from app.models.notification import Notification
+            count = Notification.query.filter_by(
+                user_id=current_user.id, is_read=False
+            ).count()
+            return {'unread_count': count}
+        return {'unread_count': 0}
+
     from app.commands import register_commands
     register_commands(app)
 

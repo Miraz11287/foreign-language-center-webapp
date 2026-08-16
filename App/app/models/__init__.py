@@ -7,6 +7,7 @@ from app.models.teacher_request import TeacherRequest, RequestStatus
 from app.models.course_material import CourseMaterial
 from app.models.course_rating import CourseRating
 from app.models.course_comment import CourseComment
+from app.models.notification import Notification
 
 __all__ = [
     'User', 'Role',
@@ -18,4 +19,5 @@ __all__ = [
     'CourseMaterial',
     'CourseRating',
     'CourseComment',
+    'Notification',
 ]

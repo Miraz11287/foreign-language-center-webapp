@@ -315,6 +315,20 @@ input:focus, select:focus, textarea:focus {
     color: var(--ink-soft);
 }
 
+/* ─── File input ─────────────────────────────────────────────────────────── */
+.file-input {
+    display: block;
+    width: 100%;
+    padding: .5rem .7rem;
+    border: 2px dashed var(--border);
+    border-radius: 6px;
+    background: var(--paper);
+    font-family: 'Patrick Hand', sans-serif;
+    font-size: .95rem;
+    cursor: pointer;
+}
+.file-input:focus { outline: none; border-color: var(--accent); }
+
 /* ─── Notifications ──────────────────────────────────────────────────────── */
 .notif-bell {
     position: relative;

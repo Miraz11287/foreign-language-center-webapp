@@ -5,7 +5,7 @@
 <div class="form-card" style="max-width:680px;">
     <h1 class="form-title">{{ title }}</h1>
     <p style="text-align:center;color:var(--ink-soft);margin-bottom:1rem;">{{ course.name }}</p>
-    <form method="POST" novalidate>
+    <form method="POST" enctype="multipart/form-data" novalidate>
         {{ form.hidden_tag() }}
         <div class="form-group">
             {{ form.title.label }}
@@ -14,8 +14,14 @@
         </div>
         <div class="form-group">
             {{ form.content.label }}
-            {{ form.content(rows=12, placeholder='Write the lesson material here…') }}
+            {{ form.content(rows=10, placeholder='Write the lesson material here… (optional if uploading a file)') }}
             {% for e in form.content.errors %}<span class="form-error">{{ e }}</span>{% endfor %}
+        </div>
+        <div class="form-group">
+            {{ form.file.label }}
+            {{ form.file(class='file-input') }}
+            {% for e in form.file.errors %}<span class="form-error">{{ e }}</span>{% endfor %}
+            <small style="color:var(--ink-soft);">Allowed: PDF, DOC, DOCX, TXT, images, MP3, MP4</small>
         </div>
         <div style="display:flex;gap:1rem;margin-top:.5rem;">
             {{ form.submit(class='btn btn--primary') }}

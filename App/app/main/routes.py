@@ -139,13 +139,23 @@ def delete_comment(course_id, comment_id):
     return redirect(url_for('main.course_detail', course_id=course_id))
 
 
+ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'txt', 'png', 'jpg', 'jpeg', 'gif', 'mp3', 'mp4'}
+UPLOAD_FOLDER = '/app/uploads/materials'
+
+
+def _allowed(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
 @main_bp.route('/courses/<int:course_id>/materials/new', methods=['GET', 'POST'])
 def material_new(course_id):
+    import os, uuid
     from flask import redirect, url_for, flash, abort
     from flask_login import current_user
     from flask_wtf import FlaskForm
+    from flask_wtf.file import FileField, FileAllowed
     from wtforms import StringField, TextAreaField, SubmitField
-    from wtforms.validators import DataRequired
+    from wtforms.validators import DataRequired, Optional
 
     course = db.session.get(Course, course_id) or abort(404)
     can_edit = (
@@ -157,24 +167,53 @@ def material_new(course_id):
 
     class MaterialForm(FlaskForm):
         title   = StringField('Title', validators=[DataRequired()])
-        content = TextAreaField('Content', validators=[DataRequired()])
+        content = TextAreaField('Content', validators=[Optional()])
+        file    = FileField('Attach file (PDF, DOCX, image…)',
+                            validators=[FileAllowed(list(ALLOWED_EXTENSIONS), 'File type not allowed.')])
         submit  = SubmitField('Save')
 
     form = MaterialForm()
     if form.validate_on_submit():
+        saved_name = saved_path = None
+        f = form.file.data
+        if f and f.filename:
+            if not _allowed(f.filename):
+                flash('File type not allowed.', 'error')
+                return render_template('material_form.html', form=form, course=course, title='New material')
+            os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+            ext = f.filename.rsplit('.', 1)[1].lower()
+            saved_name = f.filename
+            unique_name = f'{uuid.uuid4().hex}.{ext}'
+            saved_path = os.path.join(UPLOAD_FOLDER, unique_name)
+            f.save(saved_path)
+
         order = course.materials.count()
         db.session.add(CourseMaterial(
             course_id=course_id,
             author_id=current_user.id,
             title=form.title.data.strip(),
-            content=form.content.data.strip(),
+            content=form.content.data.strip() if form.content.data else None,
             order=order,
+            file_name=saved_name,
+            file_path=saved_path,
         ))
         db.session.commit()
         flash('Material added.', 'success')
         return redirect(url_for('main.course_detail', course_id=course_id))
 
     return render_template('material_form.html', form=form, course=course, title='New material')
+
+
+@main_bp.route('/courses/<int:course_id>/materials/<int:material_id>/download')
+def material_download(course_id, material_id):
+    import os
+    from flask import send_file, abort
+    from flask_login import current_user
+
+    material = db.session.get(CourseMaterial, material_id) or abort(404)
+    if not material.file_path or not os.path.exists(material.file_path):
+        abort(404)
+    return send_file(material.file_path, as_attachment=True, download_name=material.file_name)
 
 
 @main_bp.route('/courses/<int:course_id>/materials/<int:material_id>/delete', methods=['POST'])

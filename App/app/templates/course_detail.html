@@ -33,8 +33,21 @@
                 <div class="materials-list">
                 {% for m in materials %}
                     <details class="material-item">
-                        <summary class="material-item__title">{{ m.title }}</summary>
+                        <summary class="material-item__title">
+                            {{ m.title }}
+                            {% if m.file_name %}
+                                <span class="badge badge--info" style="font-size:.75rem;margin-left:.4rem;">file</span>
+                            {% endif %}
+                        </summary>
+                        {% if m.content %}
                         <div class="material-item__content">{{ m.content }}</div>
+                        {% endif %}
+                        {% if m.file_name %}
+                        <div style="margin-top:.6rem;">
+                            <a href="{{ url_for('main.material_download', course_id=course.id, material_id=m.id) }}"
+                               class="btn btn--sm">Download: {{ m.file_name }}</a>
+                        </div>
+                        {% endif %}
                         {% if current_user.is_authenticated and (current_user.is_admin() or course.teacher_id == current_user.id) %}
                             <form method="POST" action="{{ url_for('main.material_delete', course_id=course.id, material_id=m.id) }}"
                                   onsubmit="return confirm('Delete this material?')" style="margin-top:.5rem;">

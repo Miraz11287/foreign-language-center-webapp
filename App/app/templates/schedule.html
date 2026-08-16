@@ -1,6 +1,108 @@
 {% extends 'base.html' %}
 {% block title %}Schedule — LangCenter{% endblock %}
+
 {% block content %}
-<h1>Schedule</h1>
-<p style="color:var(--ink-soft);margin-top:.5rem;">Coming in Part 4.</p>
+<div class="schedule-header">
+    <h1>Schedule</h1>
+
+    <!-- Week navigation -->
+    <div class="week-nav">
+        <a href="{{ url_for('main.schedule', week=prev_week) }}" class="btn btn--sm">&#8592; Prev</a>
+        <span class="week-label">
+            {{ week_start.strftime('%d %b') }} &mdash; {{ (week_start + range(6)|last|int|timedelta).strftime('%d %b %Y') if false }}
+            Week of {{ week_start.strftime('%d %b %Y') }}
+        </span>
+        <a href="{{ url_for('main.schedule', week=next_week) }}" class="btn btn--sm">Next &#8594;</a>
+    </div>
+</div>
+
+<!-- Filters -->
+<form method="GET" action="{{ url_for('main.schedule') }}" class="filter-bar">
+    <input type="hidden" name="week" value="{{ week_start.strftime('%Y-%m-%d') }}">
+
+    <select name="language" class="select-sm">
+        <option value="">All languages</option>
+        {% for lang in languages %}
+            <option value="{{ lang }}" {% if selected_language == lang %}selected{% endif %}>{{ lang }}</option>
+        {% endfor %}
+    </select>
+
+    <select name="level" class="select-sm">
+        <option value="">All levels</option>
+        {% for lvl in levels %}
+            <option value="{{ lvl }}" {% if selected_level == lvl %}selected{% endif %}>{{ lvl }}</option>
+        {% endfor %}
+    </select>
+
+    <select name="teacher_id" class="select-sm">
+        <option value="">All teachers</option>
+        {% for t in teachers %}
+            <option value="{{ t.id }}" {% if selected_teacher == t.id %}selected{% endif %}>{{ t.full_name }}</option>
+        {% endfor %}
+    </select>
+
+    <button type="submit" class="btn btn--sm btn--primary">Filter</button>
+    <a href="{{ url_for('main.schedule', week=week_start.strftime('%Y-%m-%d')) }}" class="btn btn--sm">Clear</a>
+</form>
+
+<!-- Week grid -->
+<div class="week-grid">
+    {% for day, day_lessons in days.items() %}
+    <div class="day-col {% if day == today %}day-col--today{% endif %}">
+        <div class="day-col__header">
+            <span class="day-name">{{ day.strftime('%A') }}</span>
+            <span class="day-date">{{ day.strftime('%d %b') }}</span>
+        </div>
+
+        {% if day_lessons %}
+            {% for lesson in day_lessons %}
+            <div class="lesson-card {% if lesson.is_full %}lesson-card--full{% endif %}">
+                <div class="lesson-card__course">{{ lesson.course.name }}</div>
+                <div class="lesson-card__meta">
+                    <span class="badge badge--student">{{ lesson.course.language }}</span>
+                    <span class="badge badge--admin">{{ lesson.course.level.value }}</span>
+                </div>
+                <div class="lesson-card__time">
+                    {{ lesson.starts_at.strftime('%H:%M') }}
+                    &middot; {{ lesson.duration_min }} min
+                </div>
+                <div class="lesson-card__teacher">{{ lesson.teacher.full_name }}</div>
+                {% if lesson.room %}
+                    <div class="lesson-card__room">Room {{ lesson.room }}</div>
+                {% endif %}
+                <div class="lesson-card__spots">
+                    {{ lesson.enrolled_count }}/{{ lesson.capacity }} enrolled
+                    {% if lesson.is_full %}<span style="color:var(--danger);"> &middot; Full</span>{% endif %}
+                </div>
+
+                {% if current_user.is_authenticated and current_user.is_student() %}
+                    {% if lesson.id in enrolled_ids %}
+                        <form method="POST" action="{{ url_for('main.unenroll', lesson_id=lesson.id) }}" style="margin-top:.5rem;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="week" value="{{ week_start.strftime('%Y-%m-%d') }}">
+                            <button class="btn btn--sm btn--danger" type="submit">Cancel</button>
+                        </form>
+                    {% elif not lesson.is_full %}
+                        <form method="POST" action="{{ url_for('main.enroll', lesson_id=lesson.id) }}" style="margin-top:.5rem;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="week" value="{{ week_start.strftime('%Y-%m-%d') }}">
+                            <button class="btn btn--sm btn--primary" type="submit">Enroll</button>
+                        </form>
+                    {% endif %}
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="day-empty">No lessons</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// highlight today
+const today = new Date().toDateString();
+</script>
 {% endblock %}

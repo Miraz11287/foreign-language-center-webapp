@@ -378,9 +378,109 @@ footer {
     margin: 2rem 0;
 }
 
+/* ─── Schedule ───────────────────────────────────────────────────────────── */
+.schedule-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+}
+
+.week-nav {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+.week-label {
+    font-family: 'Caveat', cursive;
+    font-size: 1.1rem;
+    color: var(--ink-soft);
+}
+
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+    padding: .75rem 1rem;
+    background: var(--paper-dark);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sketch-sm);
+}
+
+.week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: .75rem;
+    align-items: start;
+}
+
+.day-col { display: flex; flex-direction: column; gap: .5rem; }
+
+.day-col__header {
+    text-align: center;
+    padding: .4rem .2rem;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: .25rem;
+}
+.day-name {
+    display: block;
+    font-family: 'Caveat', cursive;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+.day-date {
+    display: block;
+    font-size: .85rem;
+    color: var(--ink-soft);
+}
+.day-col--today .day-col__header {
+    background: var(--paper-dark);
+    border-radius: 4px;
+}
+.day-col--today .day-name { color: var(--accent); }
+
+.day-empty {
+    font-size: .9rem;
+    color: var(--ink-soft);
+    text-align: center;
+    padding: .5rem 0;
+}
+
+.lesson-card {
+    background: #fffdf8;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: .65rem .75rem;
+    font-size: .88rem;
+    box-shadow: 2px 2px 0 var(--border);
+}
+.lesson-card--full { opacity: .7; }
+
+.lesson-card__course {
+    font-family: 'Caveat', cursive;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: .2rem;
+}
+.lesson-card__meta { display: flex; gap: .3rem; flex-wrap: wrap; margin-bottom: .3rem; }
+.lesson-card__meta .badge { font-size: .78rem; padding: .05rem .4rem; }
+.lesson-card__time { color: var(--ink); font-weight: 600; }
+.lesson-card__teacher { color: var(--ink-soft); font-size: .82rem; }
+.lesson-card__room { color: var(--ink-soft); font-size: .82rem; }
+.lesson-card__spots { font-size: .82rem; margin-top: .2rem; }
+
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .week-grid { grid-template-columns: repeat(4, 1fr); }
+}
 @media (max-width: 600px) {
+    .week-grid { grid-template-columns: repeat(2, 1fr); }
     .form-row { grid-template-columns: 1fr; }
     .navbar { flex-direction: column; align-items: flex-start; }
     .nav-links { gap: .9rem; }
+    .schedule-header { flex-direction: column; align-items: flex-start; }
 }

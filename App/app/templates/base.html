@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,19 +13,22 @@
 <body>
 <header>
     <nav class="navbar">
-        <a href="{{ url_for('main.index') }}" class="nav-logo">Lang<span>Center</span></a>
+        <a href="{{ url_for('main.index') }}" class="nav-logo">
+            <img src="{{ url_for('static', filename='img/logo-icon.jpg') }}" alt="LangCenter logo" class="nav-logo__img">
+            Lang<span>Center</span>
+        </a>
         <ul class="nav-links">
-            <li><a href="{{ url_for('main.index') }}">Главная</a></li>
+            <li><a href="{{ url_for('main.index') }}">Home</a></li>
             {% if current_user.is_authenticated %}
+                <li><a href="{{ url_for('main.schedule') }}">Schedule</a></li>
                 {% if current_user.is_admin() %}
-                    <li><a href="{{ url_for('admin.index') }}">Панель</a></li>
+                    <li><a href="{{ url_for('admin.index') }}">Admin</a></li>
                 {% endif %}
-                <li><a href="{{ url_for('main.schedule') }}">Расписание</a></li>
                 <li class="nav-user">{{ current_user.full_name }}</li>
-                <li><a href="{{ url_for('auth.logout') }}">Выйти</a></li>
+                <li><a href="{{ url_for('auth.logout') }}">Log out</a></li>
             {% else %}
-                <li><a href="{{ url_for('auth.login') }}">Войти</a></li>
-                <li><a href="{{ url_for('auth.register') }}">Регистрация</a></li>
+                <li><a href="{{ url_for('auth.login') }}">Log in</a></li>
+                <li><a href="{{ url_for('auth.register') }}">Register</a></li>
             {% endif %}
         </ul>
     </nav>

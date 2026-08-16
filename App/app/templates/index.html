@@ -1,16 +1,16 @@
 {% extends 'base.html' %}
-{% block title %}LangCenter — Центр иностранных языков{% endblock %}
+{% block title %}LangCenter — Foreign Language Center{% endblock %}
 
 {% block content %}
 <section class="hero">
     <h1 class="hero__title">Lang<span>Center</span></h1>
-    <p class="hero__sub">Учи языки. Записывайся на занятия. Следи за прогрессом.</p>
+    <p class="hero__sub">Learn languages. Book classes. Track your progress.</p>
     <div class="hero__actions">
         {% if current_user.is_authenticated %}
-            <a href="{{ url_for('main.schedule') }}" class="btn btn--primary">Расписание</a>
+            <a href="{{ url_for('main.schedule') }}" class="btn btn--primary">View schedule</a>
         {% else %}
-            <a href="{{ url_for('auth.register') }}" class="btn btn--primary">Начать учиться</a>
-            <a href="{{ url_for('auth.login') }}" class="btn">Войти</a>
+            <a href="{{ url_for('auth.register') }}" class="btn btn--primary">Get started</a>
+            <a href="{{ url_for('auth.login') }}" class="btn">Log in</a>
         {% endif %}
     </div>
 </section>
@@ -19,24 +19,20 @@
 
 <div class="features">
     <div class="feature-card">
-        <span class="feature-card__icon">📅</span>
-        <h3>Расписание</h3>
-        <p>Удобный просмотр занятий по неделям с фильтрами по языку и преподавателю.</p>
+        <h3>Schedule</h3>
+        <p>Browse the weekly timetable and filter by language, level, or teacher.</p>
     </div>
     <div class="feature-card">
-        <span class="feature-card__icon">✏️</span>
-        <h3>Запись</h3>
-        <p>Запишись на занятие в один клик. Отменить тоже просто.</p>
+        <h3>Enrollment</h3>
+        <p>Sign up for a class in one click. Cancel just as easily.</p>
     </div>
     <div class="feature-card">
-        <span class="feature-card__icon">📊</span>
-        <h3>Успеваемость</h3>
-        <p>Преподаватель ставит оценки и отмечает посещаемость. Студент видит прогресс.</p>
+        <h3>Progress</h3>
+        <p>Teachers mark attendance and grades. Students track their results.</p>
     </div>
     <div class="feature-card">
-        <span class="feature-card__icon">🌍</span>
-        <h3>Языки</h3>
-        <p>Английский, немецкий, французский и другие — уровни от A1 до C2.</p>
+        <h3>Languages</h3>
+        <p>English, German, French and more — levels from A1 to C2.</p>
     </div>
 </div>
 {% endblock %}

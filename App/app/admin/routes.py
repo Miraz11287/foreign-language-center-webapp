@@ -54,9 +54,9 @@ def change_role(user_id):
     try:
         user.role = Role[role_value]
         db.session.commit()
-        flash(f'Роль {user.full_name} изменена на «{role_value}».', 'success')
+        flash(f'Role updated for {user.full_name}.', 'success')
     except KeyError:
-        flash('Неверная роль.', 'error')
+        flash('Invalid role.', 'error')
     return redirect(url_for('admin.users'))
 
 
@@ -86,9 +86,9 @@ def course_new():
         )
         db.session.add(course)
         db.session.commit()
-        flash('Курс создан.', 'success')
+        flash('Course created.', 'success')
         return redirect(url_for('admin.courses'))
-    return render_template('admin/course_form.html', form=form, title='Новый курс')
+    return render_template('admin/course_form.html', form=form, title='New course')
 
 
 @admin_bp.route('/courses/<int:course_id>/edit', methods=['GET', 'POST'])
@@ -105,10 +105,10 @@ def course_edit(course_id):
         course.description = form.description.data
         course.teacher_id  = form.teacher_id.data
         db.session.commit()
-        flash('Курс обновлён.', 'success')
+        flash('Course updated.', 'success')
         return redirect(url_for('admin.courses'))
     form.level.data = course.level.value
-    return render_template('admin/course_form.html', form=form, title='Редактировать курс')
+    return render_template('admin/course_form.html', form=form, title='Edit course')
 
 
 @admin_bp.route('/courses/<int:course_id>/delete', methods=['POST'])
@@ -118,7 +118,7 @@ def course_delete(course_id):
     course = db.session.get(Course, course_id) or abort(404)
     db.session.delete(course)
     db.session.commit()
-    flash('Курс удалён.', 'success')
+    flash('Course deleted.', 'success')
     return redirect(url_for('admin.courses'))
 
 
@@ -150,9 +150,9 @@ def lesson_new():
         )
         db.session.add(lesson)
         db.session.commit()
-        flash('Занятие добавлено.', 'success')
+        flash('Lesson added.', 'success')
         return redirect(url_for('admin.lessons'))
-    return render_template('admin/lesson_form.html', form=form, title='Новое занятие')
+    return render_template('admin/lesson_form.html', form=form, title='New lesson')
 
 
 @admin_bp.route('/lessons/<int:lesson_id>/edit', methods=['GET', 'POST'])
@@ -171,9 +171,9 @@ def lesson_edit(lesson_id):
         lesson.room         = form.room.data
         lesson.capacity     = form.capacity.data
         db.session.commit()
-        flash('Занятие обновлено.', 'success')
+        flash('Lesson updated.', 'success')
         return redirect(url_for('admin.lessons'))
-    return render_template('admin/lesson_form.html', form=form, title='Редактировать занятие')
+    return render_template('admin/lesson_form.html', form=form, title='Edit lesson')
 
 
 @admin_bp.route('/lessons/<int:lesson_id>/delete', methods=['POST'])
@@ -183,5 +183,5 @@ def lesson_delete(lesson_id):
     lesson = db.session.get(Lesson, lesson_id) or abort(404)
     db.session.delete(lesson)
     db.session.commit()
-    flash('Занятие удалено.', 'success')
+    flash('Lesson deleted.', 'success')
     return redirect(url_for('admin.lessons'))

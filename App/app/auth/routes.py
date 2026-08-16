@@ -22,7 +22,7 @@ def register():
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
-        flash('Аккаунт создан! Войдите.', 'success')
+        flash('Account created! Please log in.', 'success')
         return redirect(url_for('auth.login'))
 
     return render_template('auth/register.html', form=form)
@@ -40,7 +40,7 @@ def login():
             login_user(user, remember=form.remember_me.data)
             next_page = request.args.get('next')
             return redirect(next_page or url_for('main.index'))
-        flash('Неверный email или пароль.', 'error')
+        flash('Invalid email or password.', 'error')
 
     return render_template('auth/login.html', form=form)
 

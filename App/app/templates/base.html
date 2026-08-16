@@ -24,6 +24,10 @@
                 <li><a href="{{ url_for('main.schedule') }}">Schedule</a></li>
                 {% if current_user.is_student() %}
                     <li><a href="{{ url_for('main.my_lessons') }}">My lessons</a></li>
+                    <li><a href="{{ url_for('main.my_progress') }}">My progress</a></li>
+                {% endif %}
+                {% if current_user.is_teacher() %}
+                    <li><a href="{{ url_for('teacher.index') }}">My lessons</a></li>
                 {% endif %}
                 {% if current_user.is_admin() %}
                     <li><a href="{{ url_for('admin.index') }}">Admin</a></li>

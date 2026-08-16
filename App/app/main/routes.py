@@ -381,6 +381,37 @@ def unenroll(lesson_id):
     return redirect(url_for('main.schedule', week=week))
 
 
+@main_bp.route('/my-progress')
+def my_progress():
+    from flask import redirect, url_for
+    from flask_login import current_user
+    from app.models.grade import Grade
+    from app.models.enrollment import Enrollment, EnrollmentStatus
+
+    if not current_user.is_authenticated:
+        return redirect(url_for('auth.login'))
+
+    grades = (
+        Grade.query
+        .filter_by(student_id=current_user.id)
+        .join(Lesson)
+        .order_by(Lesson.starts_at.desc())
+        .all()
+    )
+
+    # stats
+    attended = sum(1 for g in grades if g.attended)
+    scored   = [g.score for g in grades if g.score is not None]
+    avg      = round(sum(scored) / len(scored), 1) if scored else None
+
+    return render_template('my_progress.html',
+        grades=grades,
+        total=len(grades),
+        attended=attended,
+        avg=avg,
+    )
+
+
 @main_bp.route('/my-lessons')
 def my_lessons():
     from flask import redirect, url_for

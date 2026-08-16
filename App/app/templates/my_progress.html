@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}My Progress — LangCenter{% endblock %}
+
+{% block content %}
+<h1>My progress</h1>
+
+<!-- Stats strip -->
+<div class="features" style="margin:1.2rem 0;grid-template-columns:repeat(3,1fr);">
+    <div class="feature-card" style="text-align:center;">
+        <h3>{{ total }}</h3>
+        <p>Lessons graded</p>
+    </div>
+    <div class="feature-card" style="text-align:center;">
+        <h3>{{ attended }}</h3>
+        <p>Attended</p>
+    </div>
+    <div class="feature-card" style="text-align:center;">
+        <h3>{{ avg if avg else '—' }}</h3>
+        <p>Average score</p>
+    </div>
+</div>
+
+{% if grades %}
+<div class="table-wrap">
+<table class="sketch-table">
+    <thead>
+        <tr>
+            <th>Course</th>
+            <th>Language</th>
+            <th>Date</th>
+            <th>Teacher</th>
+            <th>Attended</th>
+            <th>Score</th>
+            <th>Notes</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for g in grades %}
+        <tr>
+            <td>{{ g.lesson.course.name }}</td>
+            <td>{{ g.lesson.course.language }} {{ g.lesson.course.level.value }}</td>
+            <td>{{ g.lesson.starts_at.strftime('%d %b %Y') }}</td>
+            <td>{{ g.lesson.teacher.full_name }}</td>
+            <td style="text-align:center;">
+                {% if g.attended %}
+                    <span class="badge badge--teacher">Yes</span>
+                {% else %}
+                    <span class="badge badge--student">No</span>
+                {% endif %}
+            </td>
+            <td style="text-align:center;">
+                {% if g.score is not none %}
+                    <strong>{{ g.score }}</strong>
+                {% else %}
+                    <span style="color:var(--ink-soft);">—</span>
+                {% endif %}
+            </td>
+            <td style="color:var(--ink-soft);font-size:.9rem;">{{ g.notes or '—' }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+    <p style="color:var(--ink-soft);">No grades yet. Enroll in lessons and attend classes.</p>
+{% endif %}
+{% endblock %}

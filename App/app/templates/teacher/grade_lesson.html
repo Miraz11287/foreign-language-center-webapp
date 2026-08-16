@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Grade lesson — {{ lesson.course.name }}{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem;">
+    <div>
+        <a href="{{ url_for('teacher.index') }}" style="color:var(--ink-soft);font-size:.9rem;">← My lessons</a>
+        <h1 style="margin-top:.2rem;">{{ lesson.course.name }}</h1>
+        <p style="color:var(--ink-soft);">
+            {{ lesson.starts_at.strftime('%d %b %Y %H:%M') }}
+            {% if lesson.room %} &middot; Room {{ lesson.room }}{% endif %}
+        </p>
+    </div>
+</div>
+
+{% if enrollments %}
+<form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="table-wrap">
+    <table class="sketch-table">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Attended</th>
+                <th>Score (0–100)</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for e in enrollments %}
+            {% set g = existing.get(e.student_id) %}
+            <tr>
+                <td>{{ e.student.full_name }}</td>
+                <td style="text-align:center;">
+                    <input type="checkbox" name="attended_{{ e.student_id }}"
+                           {% if g and g.attended %}checked{% endif %}>
+                </td>
+                <td>
+                    <input type="number" name="score_{{ e.student_id }}"
+                           min="0" max="100" step="0.1"
+                           value="{{ g.score if g and g.score is not none else '' }}"
+                           placeholder="—"
+                           style="width:90px;padding:.3rem .5rem;border:2px solid var(--border);border-radius:4px;font-family:'Patrick Hand',sans-serif;">
+                </td>
+                <td>
+                    <input type="text" name="notes_{{ e.student_id }}"
+                           value="{{ g.notes if g and g.notes else '' }}"
+                           placeholder="Optional note"
+                           style="width:100%;padding:.3rem .5rem;border:2px solid var(--border);border-radius:4px;font-family:'Patrick Hand',sans-serif;">
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    <button type="submit" class="btn btn--primary" style="margin-top:1rem;">Save grades</button>
+</form>
+{% else %}
+    <p style="color:var(--ink-soft);">No students enrolled in this lesson.</p>
+{% endif %}
+{% endblock %}

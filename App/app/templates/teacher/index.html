@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}My lessons — Teacher{% endblock %}
+
+{% block content %}
+<h1>My lessons</h1>
+
+<div class="table-wrap" style="margin-top:1.2rem;">
+<table class="sketch-table">
+    <thead>
+        <tr><th>Course</th><th>Date & time</th><th>Room</th><th>Enrolled</th><th>Graded</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for lesson in lessons %}
+        <tr>
+            <td>{{ lesson.course.name }}</td>
+            <td>{{ lesson.starts_at.strftime('%d %b %Y %H:%M') }}</td>
+            <td>{{ lesson.room or '—' }}</td>
+            <td>{{ lesson.enrolled_count }}/{{ lesson.capacity }}</td>
+            <td>
+                {% set graded = lesson.grades.count() %}
+                {% if graded == lesson.enrolled_count and graded > 0 %}
+                    <span class="badge badge--teacher">Done</span>
+                {% elif graded > 0 %}
+                    <span class="badge badge--admin">{{ graded }}/{{ lesson.enrolled_count }}</span>
+                {% else %}
+                    <span class="badge badge--student">—</span>
+                {% endif %}
+            </td>
+            <td>
+                <a href="{{ url_for('teacher.grade_lesson', lesson_id=lesson.id) }}" class="btn btn--sm btn--primary">
+                    Grade
+                </a>
+            </td>
+        </tr>
+    {% else %}
+        <tr><td colspan="6" style="text-align:center;">No lessons assigned yet.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} — LangCenter{% endblock %}
+
+{% block content %}
+<div class="form-card" style="max-width:680px;">
+    <h1 class="form-title">{{ title }}</h1>
+    <p style="text-align:center;color:var(--ink-soft);margin-bottom:1rem;">{{ course.name }}</p>
+    <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.title.label }}
+            {{ form.title(placeholder='e.g. Grammar: Present Simple') }}
+            {% for e in form.title.errors %}<span class="form-error">{{ e }}</span>{% endfor %}
+        </div>
+        <div class="form-group">
+            {{ form.content.label }}
+            {{ form.content(rows=12, placeholder='Write the lesson material here…') }}
+            {% for e in form.content.errors %}<span class="form-error">{{ e }}</span>{% endfor %}
+        </div>
+        <div style="display:flex;gap:1rem;margin-top:.5rem;">
+            {{ form.submit(class='btn btn--primary') }}
+            <a href="{{ url_for('main.course_detail', course_id=course.id) }}" class="btn">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

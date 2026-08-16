@@ -5,12 +5,195 @@ from app.main import main_bp
 from app.extensions import db
 from app.models.lesson import Lesson
 from app.models.course import Course, LanguageLevel
+from app.models.course_material import CourseMaterial
+from app.models.course_rating import CourseRating
+from app.models.course_comment import CourseComment
 from app.models.user import User, Role
 
 
 @main_bp.route('/')
 def index():
     return render_template('index.html')
+
+
+@main_bp.route('/courses')
+def courses():
+    lang_filter  = request.args.get('language', '')
+    level_filter = request.args.get('level', '')
+
+    query = Course.query.filter_by(is_active=True)
+    if lang_filter:
+        query = query.filter(Course.language.ilike(f'%{lang_filter}%'))
+    if level_filter:
+        query = query.filter(Course.level == LanguageLevel(level_filter))
+
+    all_courses = query.order_by(Course.language, Course.name).all()
+    languages   = [r[0] for r in db.session.query(Course.language).distinct().order_by(Course.language).all()]
+    levels      = [l.value for l in LanguageLevel]
+
+    return render_template('courses.html',
+        courses=all_courses,
+        languages=languages,
+        levels=levels,
+        selected_language=lang_filter,
+        selected_level=level_filter,
+    )
+
+
+@main_bp.route('/courses/<int:course_id>', methods=['GET', 'POST'])
+def course_detail(course_id):
+    from flask_login import current_user
+    from flask import abort
+
+    course = db.session.get(Course, course_id) or abort(404)
+
+    # upcoming lessons
+    upcoming = (
+        course.lessons
+        .filter(Lesson.starts_at >= datetime.now())
+        .order_by(Lesson.starts_at)
+        .limit(5)
+        .all()
+    )
+
+    # user's existing rating
+    user_rating = None
+    if current_user.is_authenticated:
+        r = CourseRating.query.filter_by(
+            course_id=course_id, user_id=current_user.id
+        ).first()
+        user_rating = r.score if r else None
+
+    comments = course.comments.all()
+    materials = course.materials.all()
+
+    return render_template('course_detail.html',
+        course=course,
+        upcoming=upcoming,
+        user_rating=user_rating,
+        comments=comments,
+        materials=materials,
+    )
+
+
+@main_bp.route('/courses/<int:course_id>/rate', methods=['POST'])
+def rate_course(course_id):
+    from flask import redirect, url_for, flash
+    from flask_login import current_user
+
+    if not current_user.is_authenticated:
+        return redirect(url_for('auth.login'))
+
+    score = request.form.get('score', type=int)
+    if not score or not (1 <= score <= 5):
+        flash('Invalid rating.', 'error')
+        return redirect(url_for('main.course_detail', course_id=course_id))
+
+    existing = CourseRating.query.filter_by(
+        course_id=course_id, user_id=current_user.id
+    ).first()
+
+    if existing:
+        existing.score = score
+    else:
+        db.session.add(CourseRating(
+            course_id=course_id, user_id=current_user.id, score=score
+        ))
+    db.session.commit()
+    flash('Rating saved.', 'success')
+    return redirect(url_for('main.course_detail', course_id=course_id))
+
+
+@main_bp.route('/courses/<int:course_id>/comment', methods=['POST'])
+def comment_course(course_id):
+    from flask import redirect, url_for, flash
+    from flask_login import current_user
+
+    if not current_user.is_authenticated:
+        return redirect(url_for('auth.login'))
+
+    body = request.form.get('body', '').strip()
+    if not body:
+        flash('Comment cannot be empty.', 'error')
+        return redirect(url_for('main.course_detail', course_id=course_id))
+
+    db.session.add(CourseComment(
+        course_id=course_id, user_id=current_user.id, body=body
+    ))
+    db.session.commit()
+    flash('Comment added.', 'success')
+    return redirect(url_for('main.course_detail', course_id=course_id))
+
+
+@main_bp.route('/courses/<int:course_id>/comment/<int:comment_id>/delete', methods=['POST'])
+def delete_comment(course_id, comment_id):
+    from flask import redirect, url_for, flash, abort
+    from flask_login import current_user
+
+    comment = db.session.get(CourseComment, comment_id) or abort(404)
+    if comment.user_id != current_user.id and not current_user.is_admin():
+        abort(403)
+    db.session.delete(comment)
+    db.session.commit()
+    flash('Comment deleted.', 'success')
+    return redirect(url_for('main.course_detail', course_id=course_id))
+
+
+@main_bp.route('/courses/<int:course_id>/materials/new', methods=['GET', 'POST'])
+def material_new(course_id):
+    from flask import redirect, url_for, flash, abort
+    from flask_login import current_user
+    from flask_wtf import FlaskForm
+    from wtforms import StringField, TextAreaField, SubmitField
+    from wtforms.validators import DataRequired
+
+    course = db.session.get(Course, course_id) or abort(404)
+    can_edit = (
+        current_user.is_authenticated and
+        (current_user.is_admin() or course.teacher_id == current_user.id)
+    )
+    if not can_edit:
+        abort(403)
+
+    class MaterialForm(FlaskForm):
+        title   = StringField('Title', validators=[DataRequired()])
+        content = TextAreaField('Content', validators=[DataRequired()])
+        submit  = SubmitField('Save')
+
+    form = MaterialForm()
+    if form.validate_on_submit():
+        order = course.materials.count()
+        db.session.add(CourseMaterial(
+            course_id=course_id,
+            author_id=current_user.id,
+            title=form.title.data.strip(),
+            content=form.content.data.strip(),
+            order=order,
+        ))
+        db.session.commit()
+        flash('Material added.', 'success')
+        return redirect(url_for('main.course_detail', course_id=course_id))
+
+    return render_template('material_form.html', form=form, course=course, title='New material')
+
+
+@main_bp.route('/courses/<int:course_id>/materials/<int:material_id>/delete', methods=['POST'])
+def material_delete(course_id, material_id):
+    from flask import redirect, url_for, flash, abort
+    from flask_login import current_user
+
+    material = db.session.get(CourseMaterial, material_id) or abort(404)
+    course   = db.session.get(Course, course_id) or abort(404)
+    can_edit = (
+        current_user.is_authenticated and
+        (current_user.is_admin() or course.teacher_id == current_user.id)
+    )
+    if not can_edit:
+        abort(403)
+    db.session.delete(material)
+    db.session.commit()
+    flash('Material deleted.', 'success')
+    return redirect(url_for('main.course_detail', course_id=course_id))
 
 
 @main_bp.route('/schedule')

@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% block title %}{{ course.name }} — LangCenter{% endblock %}
+
+{% block content %}
+<div class="course-detail-header">
+    <div>
+        <a href="{{ url_for('main.courses') }}" style="color:var(--ink-soft);font-size:.9rem;">← All courses</a>
+        <h1 style="margin-top:.3rem;">{{ course.name }}</h1>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:.4rem;">
+            <span class="badge badge--student">{{ course.language }}</span>
+            <span class="badge badge--admin">{{ course.level.value }}</span>
+            <span style="color:var(--ink-soft);">{{ course.teacher.full_name }}</span>
+        </div>
+    </div>
+    {% if current_user.is_authenticated and (current_user.is_admin() or course.teacher_id == current_user.id) %}
+        <a href="{{ url_for('main.material_new', course_id=course.id) }}" class="btn btn--primary">+ Add material</a>
+    {% endif %}
+</div>
+
+{% if course.description %}
+    <p class="course-desc">{{ course.description }}</p>
+{% endif %}
+
+<div class="course-detail-grid">
+
+    <!-- Left column: materials + upcoming lessons -->
+    <div class="course-detail-main">
+
+        <!-- Materials -->
+        <section class="card" style="margin-bottom:1.2rem;">
+            <h2 style="margin-bottom:.8rem;">Materials</h2>
+            {% if materials %}
+                <div class="materials-list">
+                {% for m in materials %}
+                    <details class="material-item">
+                        <summary class="material-item__title">{{ m.title }}</summary>
+                        <div class="material-item__content">{{ m.content }}</div>
+                        {% if current_user.is_authenticated and (current_user.is_admin() or course.teacher_id == current_user.id) %}
+                            <form method="POST" action="{{ url_for('main.material_delete', course_id=course.id, material_id=m.id) }}"
+                                  onsubmit="return confirm('Delete this material?')" style="margin-top:.5rem;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn--sm btn--danger" type="submit">Delete</button>
+                            </form>
+                        {% endif %}
+                    </details>
+                {% endfor %}
+                </div>
+            {% else %}
+                <p style="color:var(--ink-soft);">No materials yet.</p>
+            {% endif %}
+        </section>
+
+        <!-- Upcoming lessons -->
+        <section class="card">
+            <h2 style="margin-bottom:.8rem;">Upcoming lessons</h2>
+            {% if upcoming %}
+                <table class="sketch-table">
+                    <thead>
+                        <tr><th>Date & time</th><th>Teacher</th><th>Room</th><th>Spots</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for lesson in upcoming %}
+                        <tr>
+                            <td>{{ lesson.starts_at.strftime('%d %b %Y %H:%M') }}</td>
+                            <td>{{ lesson.teacher.full_name }}</td>
+                            <td>{{ lesson.room or '—' }}</td>
+                            <td>{{ lesson.enrolled_count }}/{{ lesson.capacity }}
+                                {% if lesson.is_full %}<span style="color:var(--danger);"> Full</span>{% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p style="color:var(--ink-soft);">No upcoming lessons.</p>
+            {% endif %}
+        </section>
+    </div>
+
+    <!-- Right column: rating + comments -->
+    <div class="course-detail-side">
+
+        <!-- Rating -->
+        <section class="card" style="margin-bottom:1.2rem;">
+            <h2 style="margin-bottom:.6rem;">Rating</h2>
+            <div class="rating-summary">
+                {% if course.avg_rating %}
+                    <span class="rating-big">{{ course.avg_rating }}</span>
+                    <div class="star-display star-display--lg">
+                        {% for i in range(1, 6) %}
+                            <span class="{% if i <= course.avg_rating|round %}star-filled{% else %}star-empty{% endif %}">★</span>
+                        {% endfor %}
+                    </div>
+                    <span style="color:var(--ink-soft);font-size:.9rem;">{{ course.rating_count }} review{{ 's' if course.rating_count != 1 }}</span>
+                {% else %}
+                    <p style="color:var(--ink-soft);">No ratings yet.</p>
+                {% endif %}
+            </div>
+
+            {% if current_user.is_authenticated and current_user.is_student() %}
+                <hr class="divider" style="margin:1rem 0;">
+                <p style="font-family:'Caveat',cursive;margin-bottom:.4rem;">Your rating:</p>
+                <form method="POST" action="{{ url_for('main.rate_course', course_id=course.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="star-input">
+                        {% for i in range(5, 0, -1) %}
+                            <input type="radio" name="score" id="star{{ i }}" value="{{ i }}"
+                                   {% if user_rating == i %}checked{% endif %}>
+                            <label for="star{{ i }}">★</label>
+                        {% endfor %}
+                    </div>
+                    <button type="submit" class="btn btn--sm btn--primary" style="margin-top:.6rem;">Save rating</button>
+                </form>
+            {% endif %}
+        </section>
+
+        <!-- Comments -->
+        <section class="card">
+            <h2 style="margin-bottom:.8rem;">Comments</h2>
+
+            {% if current_user.is_authenticated %}
+                <form method="POST" action="{{ url_for('main.comment_course', course_id=course.id) }}" style="margin-bottom:1rem;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-group">
+                        <textarea name="body" rows="3" placeholder="Leave a comment…" class="comment-input"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn--sm btn--primary">Post</button>
+                </form>
+            {% else %}
+                <p style="color:var(--ink-soft);margin-bottom:1rem;font-size:.9rem;">
+                    <a href="{{ url_for('auth.login') }}">Log in</a> to leave a comment.
+                </p>
+            {% endif %}
+
+            {% if comments %}
+                <div class="comments-list">
+                {% for c in comments %}
+                    <div class="comment">
+                        <div class="comment__header">
+                            <span class="comment__author">{{ c.user.full_name }}</span>
+                            <span class="comment__date">{{ c.created_at.strftime('%d %b %Y') }}</span>
+                            {% if current_user.is_authenticated and (c.user_id == current_user.id or current_user.is_admin()) %}
+                                <form method="POST" action="{{ url_for('main.delete_comment', course_id=course.id, comment_id=c.id) }}"
+                                      style="display:inline;" onsubmit="return confirm('Delete?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button class="btn btn--sm btn--danger" type="submit" style="padding:.1rem .5rem;font-size:.8rem;">×</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                        <p class="comment__body">{{ c.body }}</p>
+                    </div>
+                {% endfor %}
+                </div>
+            {% else %}
+                <p style="color:var(--ink-soft);font-size:.9rem;">No comments yet.</p>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}

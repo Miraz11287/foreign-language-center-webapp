@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Courses — LangCenter{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+    <h1>Courses</h1>
+</div>
+
+<form method="GET" class="filter-bar" style="margin-bottom:1.5rem;">
+    <select name="language" class="select-sm">
+        <option value="">All languages</option>
+        {% for lang in languages %}
+            <option value="{{ lang }}" {% if selected_language == lang %}selected{% endif %}>{{ lang }}</option>
+        {% endfor %}
+    </select>
+    <select name="level" class="select-sm">
+        <option value="">All levels</option>
+        {% for lvl in levels %}
+            <option value="{{ lvl }}" {% if selected_level == lvl %}selected{% endif %}>{{ lvl }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="btn btn--sm btn--primary">Filter</button>
+    <a href="{{ url_for('main.courses') }}" class="btn btn--sm">Clear</a>
+</form>
+
+{% if courses %}
+<div class="course-grid">
+    {% for c in courses %}
+    <a href="{{ url_for('main.course_detail', course_id=c.id) }}" class="course-card">
+        <div class="course-card__lang">{{ c.language }}</div>
+        <h2 class="course-card__name">{{ c.name }}</h2>
+        <div class="course-card__meta">
+            <span class="badge badge--admin">{{ c.level.value }}</span>
+            <span class="course-card__teacher">{{ c.teacher.full_name }}</span>
+        </div>
+        {% if c.description %}
+            <p class="course-card__desc">{{ c.description[:120] }}{% if c.description|length > 120 %}…{% endif %}</p>
+        {% endif %}
+        <div class="course-card__footer">
+            {% if c.avg_rating %}
+                <span class="star-display">
+                    {% for i in range(1, 6) %}
+                        <span class="{% if i <= c.avg_rating|round %}star-filled{% else %}star-empty{% endif %}">★</span>
+                    {% endfor %}
+                    <span class="rating-num">{{ c.avg_rating }} ({{ c.rating_count }})</span>
+                </span>
+            {% else %}
+                <span style="color:var(--ink-soft);font-size:.9rem;">No ratings yet</span>
+            {% endif %}
+            <span style="color:var(--ink-soft);font-size:.9rem;">{{ c.lessons.count() }} lessons</span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+    <p style="color:var(--ink-soft);">No courses found.</p>
+{% endif %}
+{% endblock %}

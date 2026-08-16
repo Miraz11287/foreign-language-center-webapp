@@ -135,17 +135,83 @@ def request_teacher():
 
 @main_bp.route('/lessons/<int:lesson_id>/enroll', methods=['POST'])
 def enroll(lesson_id):
-    # Part 5: enrollment logic
     from flask import redirect, url_for, flash
-    from flask_login import login_required
+    from flask_login import current_user
+    from app.models.enrollment import Enrollment, EnrollmentStatus
+
     week = request.form.get('week', '')
-    flash('Enrollment coming in Part 5.', 'info')
+
+    if not current_user.is_authenticated:
+        return redirect(url_for('auth.login'))
+
+    lesson = db.session.get(Lesson, lesson_id)
+    if not lesson:
+        flash('Lesson not found.', 'error')
+        return redirect(url_for('main.schedule', week=week))
+
+    existing = Enrollment.query.filter_by(
+        student_id=current_user.id, lesson_id=lesson_id
+    ).first()
+
+    if existing and existing.status == EnrollmentStatus.active:
+        flash('You are already enrolled in this lesson.', 'info')
+    elif lesson.is_full:
+        flash('This lesson is full.', 'error')
+    else:
+        if existing:
+            existing.status = EnrollmentStatus.active
+        else:
+            db.session.add(Enrollment(
+                student_id=current_user.id,
+                lesson_id=lesson_id,
+            ))
+        db.session.commit()
+        flash(f'Enrolled in {lesson.course.name}.', 'success')
+
     return redirect(url_for('main.schedule', week=week))
 
 
 @main_bp.route('/lessons/<int:lesson_id>/unenroll', methods=['POST'])
 def unenroll(lesson_id):
     from flask import redirect, url_for, flash
+    from flask_login import current_user
+    from app.models.enrollment import Enrollment, EnrollmentStatus
+
     week = request.form.get('week', '')
-    flash('Unenrollment coming in Part 5.', 'info')
+
+    if not current_user.is_authenticated:
+        return redirect(url_for('auth.login'))
+
+    enrollment = Enrollment.query.filter_by(
+        student_id=current_user.id,
+        lesson_id=lesson_id,
+        status=EnrollmentStatus.active,
+    ).first()
+
+    if enrollment:
+        enrollment.status = EnrollmentStatus.cancelled
+        db.session.commit()
+        flash('Enrollment cancelled.', 'success')
+    else:
+        flash('No active enrollment found.', 'error')
+
     return redirect(url_for('main.schedule', week=week))
+
+
+@main_bp.route('/my-lessons')
+def my_lessons():
+    from flask import redirect, url_for
+    from flask_login import current_user
+    from app.models.enrollment import Enrollment, EnrollmentStatus
+
+    if not current_user.is_authenticated:
+        return redirect(url_for('auth.login'))
+
+    enrollments = (
+        Enrollment.query
+        .filter_by(student_id=current_user.id, status=EnrollmentStatus.active)
+        .join(Lesson)
+        .order_by(Lesson.starts_at)
+        .all()
+    )
+    return render_template('my_lessons.html', enrollments=enrollments)

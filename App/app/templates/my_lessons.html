@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}My Lessons — LangCenter{% endblock %}
+
+{% block content %}
+<h1>My lessons</h1>
+
+{% if enrollments %}
+<div class="table-wrap" style="margin-top:1.2rem;">
+<table class="sketch-table">
+    <thead>
+        <tr>
+            <th>Course</th>
+            <th>Language</th>
+            <th>Level</th>
+            <th>Teacher</th>
+            <th>Date & time</th>
+            <th>Room</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for e in enrollments %}
+        <tr>
+            <td>{{ e.lesson.course.name }}</td>
+            <td>{{ e.lesson.course.language }}</td>
+            <td>{{ e.lesson.course.level.value }}</td>
+            <td>{{ e.lesson.teacher.full_name }}</td>
+            <td>{{ e.lesson.starts_at.strftime('%d %b %Y %H:%M') }}</td>
+            <td>{{ e.lesson.room or '—' }}</td>
+            <td>
+                <form method="POST" action="{{ url_for('main.unenroll', lesson_id=e.lesson.id) }}" onsubmit="return confirm('Cancel enrollment?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="week" value="">
+                    <button class="btn btn--sm btn--danger" type="submit">Cancel</button>
+                </form>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<p style="margin-top:1.2rem;color:var(--ink-soft);">
+    You are not enrolled in any lessons yet.
+    <a href="{{ url_for('main.schedule') }}">Browse the schedule</a>.
+</p>
+{% endif %}
+{% endblock %}

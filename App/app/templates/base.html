@@ -36,11 +36,9 @@
                     <li><a href="{{ url_for('main.request_teacher') }}">Become a teacher</a></li>
                 {% endif %}
                 <li>
-                    <a href="{{ url_for('notifications.index') }}" class="notif-bell">
+                    <a href="{{ url_for('notifications.index') }}" class="notif-bell" id="notif-bell-link">
                         Notifications
-                        {% if unread_count > 0 %}
-                            <span class="notif-badge">{{ unread_count }}</span>
-                        {% endif %}
+                        <span class="notif-badge" id="notif-badge" {% if unread_count == 0 %}style="display:none"{% endif %}>{{ unread_count }}</span>
                     </a>
                 </li>
                 <li><a href="{{ url_for('auth.profile') }}" class="nav-user">{{ current_user.full_name }}</a></li>
@@ -53,11 +51,14 @@
     </nav>
 </header>
 
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
 <main class="container">
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="flash flash--{{ category }}">{{ message }}</div>
+                <div class="flash flash--{{ category }}" data-toast="{{ category }}" data-msg="{{ message }}" style="display:none"></div>
             {% endfor %}
         {% endif %}
     {% endwith %}
@@ -67,6 +68,86 @@
 <footer>
     <p>&copy; 2026 LangCenter</p>
 </footer>
+
+<script>
+(function () {
+    const DURATION = 5000;
+
+    const icons = { success: '✓', error: '✕', warning: '!', info: 'i', notification: '🔔' };
+    const titles = { success: 'Done', error: 'Error', warning: 'Heads up', info: 'Info', notification: 'Notification' };
+
+    function showToast(category, message, link) {
+        const container = document.getElementById('toast-container');
+        const cat = category || 'info';
+
+        const t = document.createElement('div');
+        t.className = `toast toast--${cat}`;
+        t.style.setProperty('--toast-dur', DURATION / 1000 + 's');
+
+        const linkOpen  = link ? `<a href="${link}" style="color:var(--accent);text-decoration:underline;">` : '';
+        const linkClose = link ? '</a>' : '';
+
+        t.innerHTML = `
+            <span class="toast__icon">${icons[cat] || icons.info}</span>
+            <div class="toast__body">
+                <div class="toast__title">${titles[cat] || 'Notice'}</div>
+                <div class="toast__msg">${linkOpen}${message}${linkClose}</div>
+            </div>
+            <button class="toast__close" aria-label="close">&#x2715;</button>
+            <div class="toast__progress"></div>
+        `;
+
+        container.prepend(t);
+
+        const timer = setTimeout(() => dismiss(t), DURATION);
+
+        t.querySelector('.toast__close').addEventListener('click', () => {
+            clearTimeout(timer);
+            dismiss(t);
+        });
+    }
+
+    function dismiss(el) {
+        el.style.animation = 'toast-out .35s ease forwards';
+        el.addEventListener('animationend', () => el.remove(), { once: true });
+    }
+
+    // Convert hidden flash divs to toasts
+    document.querySelectorAll('[data-toast]').forEach(el => {
+        showToast(el.dataset.toast, el.dataset.msg);
+    });
+
+    {% if current_user.is_authenticated %}
+    // Poll for new notifications every 30 seconds
+    const POLL_URL = "{{ url_for('notifications.poll') }}";
+    const badge    = document.getElementById('notif-badge');
+
+    function updateBadge(count) {
+        if (!badge) return;
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = '';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    function poll() {
+        fetch(POLL_URL, { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(data => {
+                updateBadge(data.unread);
+                data.new.forEach(n => showToast('notification', n.message, n.link));
+            })
+            .catch(() => {});
+    }
+
+    // First poll after 5s (page just loaded), then every 30s
+    setTimeout(poll, 5000);
+    setInterval(poll, 30000);
+    {% endif %}
+})();
+</script>
 
 {% block scripts %}{% endblock %}
 </body>

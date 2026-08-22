@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, date
 from flask import render_template, request
 from flask_login import current_user
 from app.main import main_bp
+from app.main.forms import MaterialForm, ALLOWED_EXTENSIONS
 from app.extensions import db
 from app.models.lesson import Lesson
 from app.models.course import Course, LanguageLevel
@@ -146,61 +147,41 @@ def delete_comment(course_id, comment_id):
     return redirect(url_for('main.course_detail', course_id=course_id))
 
 
-ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'txt', 'png', 'jpg', 'jpeg', 'gif', 'mp3', 'mp4'}
 UPLOAD_FOLDER = '/app/uploads/materials'
 
 
-def _allowed(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+def _save_file(f):
+    import os, uuid
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    ext = f.filename.rsplit('.', 1)[1].lower()
+    path = os.path.join(UPLOAD_FOLDER, f'{uuid.uuid4().hex}.{ext}')
+    f.save(path)
+    return f.filename, path
 
 
 @main_bp.route('/courses/<int:course_id>/materials/new', methods=['GET', 'POST'])
 def material_new(course_id):
-    import os, uuid
     from flask import redirect, url_for, flash, abort
     from flask_login import current_user
-    from flask_wtf import FlaskForm
-    from flask_wtf.file import FileField, FileAllowed
-    from wtforms import StringField, TextAreaField, SubmitField
-    from wtforms.validators import DataRequired, Optional
 
     course = db.session.get(Course, course_id) or abort(404)
-    can_edit = (
-        current_user.is_authenticated and
-        (current_user.is_admin() or course.teacher_id == current_user.id)
-    )
-    if not can_edit:
+    if not (current_user.is_authenticated and
+            (current_user.is_admin() or course.teacher_id == current_user.id)):
         abort(403)
-
-    class MaterialForm(FlaskForm):
-        title   = StringField('Title', validators=[DataRequired()])
-        content = TextAreaField('Content', validators=[Optional()])
-        file    = FileField('Attach file (PDF, DOCX, image…)',
-                            validators=[FileAllowed(list(ALLOWED_EXTENSIONS), 'File type not allowed.')])
-        submit  = SubmitField('Save')
 
     form = MaterialForm()
     if form.validate_on_submit():
         saved_name = saved_path = None
         f = form.file.data
         if f and f.filename:
-            if not _allowed(f.filename):
-                flash('File type not allowed.', 'error')
-                return render_template('material_form.html', form=form, course=course, title='New material')
-            os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-            ext = f.filename.rsplit('.', 1)[1].lower()
-            saved_name = f.filename
-            unique_name = f'{uuid.uuid4().hex}.{ext}'
-            saved_path = os.path.join(UPLOAD_FOLDER, unique_name)
-            f.save(saved_path)
+            saved_name, saved_path = _save_file(f)
 
-        order = course.materials.count()
         db.session.add(CourseMaterial(
             course_id=course_id,
             author_id=current_user.id,
             title=form.title.data.strip(),
             content=form.content.data.strip() if form.content.data else None,
-            order=order,
+            order=course.materials.count(),
             file_name=saved_name,
             file_path=saved_path,
         ))
@@ -215,7 +196,6 @@ def material_new(course_id):
 def material_download(course_id, material_id):
     import os
     from flask import send_file, abort
-    from flask_login import current_user
 
     material = db.session.get(CourseMaterial, material_id) or abort(404)
     if not material.file_path or not os.path.exists(material.file_path):
@@ -225,30 +205,15 @@ def material_download(course_id, material_id):
 
 @main_bp.route('/courses/<int:course_id>/materials/<int:material_id>/edit', methods=['GET', 'POST'])
 def material_edit(course_id, material_id):
-    import os, uuid
+    import os
     from flask import redirect, url_for, flash, abort
     from flask_login import current_user
-    from flask_wtf import FlaskForm
-    from flask_wtf.file import FileField, FileAllowed
-    from wtforms import StringField, TextAreaField, SubmitField, BooleanField
-    from wtforms.validators import DataRequired, Optional
 
     material = db.session.get(CourseMaterial, material_id) or abort(404)
     course   = db.session.get(Course, course_id) or abort(404)
-    can_edit = (
-        current_user.is_authenticated and
-        (current_user.is_admin() or course.teacher_id == current_user.id)
-    )
-    if not can_edit:
+    if not (current_user.is_authenticated and
+            (current_user.is_admin() or course.teacher_id == current_user.id)):
         abort(403)
-
-    class MaterialForm(FlaskForm):
-        title        = StringField('Title', validators=[DataRequired()])
-        content      = TextAreaField('Content', validators=[Optional()])
-        file         = FileField('Replace file',
-                                 validators=[FileAllowed(list(ALLOWED_EXTENSIONS), 'File type not allowed.')])
-        remove_file  = BooleanField('Remove current file')
-        submit       = SubmitField('Save')
 
     form = MaterialForm(obj=material)
 
@@ -258,21 +223,13 @@ def material_edit(course_id, material_id):
 
         f = form.file.data
         if f and f.filename:
-            # replace file: delete old, save new
             if material.file_path and os.path.exists(material.file_path):
                 os.remove(material.file_path)
-            os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-            ext = f.filename.rsplit('.', 1)[1].lower()
-            unique_name = f'{uuid.uuid4().hex}.{ext}'
-            saved_path = os.path.join(UPLOAD_FOLDER, unique_name)
-            f.save(saved_path)
-            material.file_name = f.filename
-            material.file_path = saved_path
+            material.file_name, material.file_path = _save_file(f)
         elif form.remove_file.data and material.file_path:
             if os.path.exists(material.file_path):
                 os.remove(material.file_path)
-            material.file_name = None
-            material.file_path = None
+            material.file_name = material.file_path = None
 
         db.session.commit()
         flash('Material updated.', 'success')

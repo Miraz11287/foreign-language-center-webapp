@@ -25,8 +25,9 @@
             <td>{{ l.room or '—' }}</td>
             <td>{{ l.capacity }}</td>
             <td>{{ l.enrolled_count }}</td>
-            <td style="display:flex;gap:.5rem;">
+            <td style="display:flex;gap:.5rem;flex-wrap:wrap;">
                 <a href="{{ url_for('admin.lesson_edit', lesson_id=l.id) }}" class="btn btn--sm">Edit</a>
+                <a href="{{ url_for('teacher.export_grades', lesson_id=l.id) }}" class="btn btn--sm">CSV</a>
                 <form method="POST" action="{{ url_for('admin.lesson_delete', lesson_id=l.id) }}" onsubmit="return confirm('Delete this lesson?')">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn--sm btn--danger">Delete</button>

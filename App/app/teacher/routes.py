@@ -1,4 +1,6 @@
-from flask import render_template, redirect, url_for, flash, request, abort
+import csv
+import io
+from flask import render_template, redirect, url_for, flash, request, abort, Response
 from flask_login import login_required, current_user
 from app.teacher import teacher_bp
 from app.auth.decorators import teacher_required
@@ -86,4 +88,45 @@ def grade_lesson(lesson_id):
         lesson=lesson,
         enrollments=enrollments,
         existing=existing,
+    )
+
+
+@teacher_bp.route('/lessons/<int:lesson_id>/grades/export')
+@login_required
+@teacher_required
+def export_grades(lesson_id):
+    lesson = db.session.get(Lesson, lesson_id) or abort(404)
+    if lesson.teacher_id != current_user.id and not current_user.is_admin():
+        abort(403)
+
+    enrollments = (
+        Enrollment.query
+        .filter_by(lesson_id=lesson_id, status=EnrollmentStatus.active)
+        .all()
+    )
+    existing = {
+        g.student_id: g
+        for g in Grade.query.filter_by(lesson_id=lesson_id).all()
+    }
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(['Student', 'Email', 'Attended', 'Score', 'Notes'])
+    for e in enrollments:
+        g = existing.get(e.student_id)
+        writer.writerow([
+            e.student.full_name,
+            e.student.email,
+            'Yes' if (g and g.attended) else 'No',
+            g.score if (g and g.score is not None) else '',
+            g.notes if (g and g.notes) else '',
+        ])
+
+    date_str = lesson.starts_at.strftime('%Y-%m-%d')
+    filename = f'grades_{lesson.course.name}_{date_str}.csv'.replace(' ', '_')
+
+    return Response(
+        buf.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'},
     )

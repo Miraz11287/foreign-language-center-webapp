@@ -11,6 +11,9 @@
             {% if lesson.room %} &middot; Room {{ lesson.room }}{% endif %}
         </p>
     </div>
+    <a href="{{ url_for('teacher.export_grades', lesson_id=lesson.id) }}" class="btn btn--sm">
+        Export grades CSV
+    </a>
 </div>
 
 {% if enrollments %}

@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, date
 from flask import render_template, request
 from flask_login import current_user
 from app.main import main_bp
-from app.main.forms import MaterialForm, ALLOWED_EXTENSIONS
+from app.main.forms import MaterialForm, TeacherRequestForm, ALLOWED_EXTENSIONS
 from app.extensions import db
 from app.models.lesson import Lesson
 from app.models.course import Course, LanguageLevel
@@ -347,10 +347,7 @@ def schedule():
 @main_bp.route('/request-teacher', methods=['GET', 'POST'])
 def request_teacher():
     from flask import redirect, url_for, flash
-    from flask_login import login_required, current_user
-    from flask_wtf import FlaskForm
-    from wtforms import TextAreaField, SubmitField
-    from wtforms.validators import Optional
+    from flask_login import login_required
     from app.models.teacher_request import TeacherRequest, RequestStatus
 
     if not current_user.is_authenticated:
@@ -363,17 +360,12 @@ def request_teacher():
         status=RequestStatus.pending
     ).first()
 
-    class RequestForm(FlaskForm):
-        message = TextAreaField('Why do you want to become a teacher?', validators=[Optional()])
-        submit  = SubmitField('Submit request')
-
-    form = RequestForm()
+    form = TeacherRequestForm()
     if form.validate_on_submit():
         if existing:
             flash('You already have a pending request.', 'info')
         else:
-            req = TeacherRequest(user_id=current_user.id, message=form.message.data)
-            db.session.add(req)
+            db.session.add(TeacherRequest(user_id=current_user.id, message=form.message.data))
             db.session.commit()
             flash('Your request has been submitted. We will review it shortly.', 'success')
         return redirect(url_for('main.index'))

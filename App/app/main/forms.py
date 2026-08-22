@@ -13,3 +13,8 @@ class MaterialForm(FlaskForm):
                             validators=[FileAllowed(list(ALLOWED_EXTENSIONS), 'File type not allowed.')])
     remove_file = BooleanField('Remove current file')
     submit      = SubmitField('Save')
+
+
+class TeacherRequestForm(FlaskForm):
+    message = TextAreaField('Why do you want to become a teacher?', validators=[Optional()])
+    submit  = SubmitField('Submit request')

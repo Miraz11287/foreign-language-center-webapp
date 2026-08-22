@@ -6,7 +6,10 @@
     <h1>Courses</h1>
 </div>
 
-<form method="GET" class="filter-bar" style="margin-bottom:1.5rem;">
+<form method="GET" class="filter-bar" style="margin-bottom:1.5rem;flex-wrap:wrap;gap:.6rem;">
+    <input type="text" name="q" value="{{ search_q }}"
+           placeholder="Search by name or description…"
+           class="select-sm" style="flex:1;min-width:180px;">
     <select name="language" class="select-sm">
         <option value="">All languages</option>
         {% for lang in languages %}
@@ -19,9 +22,16 @@
             <option value="{{ lvl }}" {% if selected_level == lvl %}selected{% endif %}>{{ lvl }}</option>
         {% endfor %}
     </select>
-    <button type="submit" class="btn btn--sm btn--primary">Filter</button>
+    <button type="submit" class="btn btn--sm btn--primary">Search</button>
     <a href="{{ url_for('main.courses') }}" class="btn btn--sm">Clear</a>
 </form>
+
+{% if search_q or selected_language or selected_level %}
+<p style="color:var(--ink-soft);margin-bottom:1rem;font-size:.95rem;">
+    Found {{ courses|length }} course{% if courses|length != 1 %}s{% endif %}
+    {% if search_q %} for &ldquo;{{ search_q }}&rdquo;{% endif %}
+</p>
+{% endif %}
 
 {% if courses %}
 <div class="course-grid">

@@ -17,12 +17,35 @@
             {{ form.content(rows=10, placeholder='Write the lesson material here… (optional if uploading a file)') }}
             {% for e in form.content.errors %}<span class="form-error">{{ e }}</span>{% endfor %}
         </div>
+
+        {% if material and material.file_name %}
         <div class="form-group">
-            {{ form.file.label }}
+            <label>Current file</label>
+            <div style="display:flex;align-items:center;gap:1rem;padding:.5rem .7rem;border:2px solid var(--border);border-radius:6px;background:var(--paper-dark);">
+                <span>{{ material.file_name }}</span>
+                <a href="{{ url_for('main.material_download', course_id=course.id, material_id=material.id) }}"
+                   class="btn btn--sm">Download</a>
+            </div>
+            <label style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem;cursor:pointer;">
+                {{ form.remove_file() }}
+                <span style="font-size:.9rem;color:var(--danger);">Remove current file</span>
+            </label>
+        </div>
+        <div class="form-group">
+            {{ form.file.label(text='Replace file (PDF, DOCX, image…)') }}
             {{ form.file(class='file-input') }}
             {% for e in form.file.errors %}<span class="form-error">{{ e }}</span>{% endfor %}
             <small style="color:var(--ink-soft);">Allowed: PDF, DOC, DOCX, TXT, images, MP3, MP4</small>
         </div>
+        {% else %}
+        <div class="form-group">
+            {{ form.file.label(text='Attach file (PDF, DOCX, image…)') }}
+            {{ form.file(class='file-input') }}
+            {% for e in form.file.errors %}<span class="form-error">{{ e }}</span>{% endfor %}
+            <small style="color:var(--ink-soft);">Allowed: PDF, DOC, DOCX, TXT, images, MP3, MP4</small>
+        </div>
+        {% endif %}
+
         <div style="display:flex;gap:1rem;margin-top:.5rem;">
             {{ form.submit(class='btn btn--primary') }}
             <a href="{{ url_for('main.course_detail', course_id=course.id) }}" class="btn">Cancel</a>

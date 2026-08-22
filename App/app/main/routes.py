@@ -20,12 +20,18 @@ def index():
 def courses():
     lang_filter  = request.args.get('language', '')
     level_filter = request.args.get('level', '')
+    search_q     = request.args.get('q', '').strip()
 
     query = Course.query.filter_by(is_active=True)
     if lang_filter:
         query = query.filter(Course.language.ilike(f'%{lang_filter}%'))
     if level_filter:
         query = query.filter(Course.level == LanguageLevel(level_filter))
+    if search_q:
+        like = f'%{search_q}%'
+        query = query.filter(
+            db.or_(Course.name.ilike(like), Course.description.ilike(like))
+        )
 
     all_courses = query.order_by(Course.language, Course.name).all()
     languages   = [r[0] for r in db.session.query(Course.language).distinct().order_by(Course.language).all()]
@@ -37,6 +43,7 @@ def courses():
         levels=levels,
         selected_language=lang_filter,
         selected_level=level_filter,
+        search_q=search_q,
     )
 
 
@@ -216,8 +223,68 @@ def material_download(course_id, material_id):
     return send_file(material.file_path, as_attachment=True, download_name=material.file_name)
 
 
+@main_bp.route('/courses/<int:course_id>/materials/<int:material_id>/edit', methods=['GET', 'POST'])
+def material_edit(course_id, material_id):
+    import os, uuid
+    from flask import redirect, url_for, flash, abort
+    from flask_login import current_user
+    from flask_wtf import FlaskForm
+    from flask_wtf.file import FileField, FileAllowed
+    from wtforms import StringField, TextAreaField, SubmitField, BooleanField
+    from wtforms.validators import DataRequired, Optional
+
+    material = db.session.get(CourseMaterial, material_id) or abort(404)
+    course   = db.session.get(Course, course_id) or abort(404)
+    can_edit = (
+        current_user.is_authenticated and
+        (current_user.is_admin() or course.teacher_id == current_user.id)
+    )
+    if not can_edit:
+        abort(403)
+
+    class MaterialForm(FlaskForm):
+        title        = StringField('Title', validators=[DataRequired()])
+        content      = TextAreaField('Content', validators=[Optional()])
+        file         = FileField('Replace file',
+                                 validators=[FileAllowed(list(ALLOWED_EXTENSIONS), 'File type not allowed.')])
+        remove_file  = BooleanField('Remove current file')
+        submit       = SubmitField('Save')
+
+    form = MaterialForm(obj=material)
+
+    if form.validate_on_submit():
+        material.title   = form.title.data.strip()
+        material.content = form.content.data.strip() if form.content.data else None
+
+        f = form.file.data
+        if f and f.filename:
+            # replace file: delete old, save new
+            if material.file_path and os.path.exists(material.file_path):
+                os.remove(material.file_path)
+            os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+            ext = f.filename.rsplit('.', 1)[1].lower()
+            unique_name = f'{uuid.uuid4().hex}.{ext}'
+            saved_path = os.path.join(UPLOAD_FOLDER, unique_name)
+            f.save(saved_path)
+            material.file_name = f.filename
+            material.file_path = saved_path
+        elif form.remove_file.data and material.file_path:
+            if os.path.exists(material.file_path):
+                os.remove(material.file_path)
+            material.file_name = None
+            material.file_path = None
+
+        db.session.commit()
+        flash('Material updated.', 'success')
+        return redirect(url_for('main.course_detail', course_id=course_id))
+
+    return render_template('material_form.html', form=form, course=course,
+                           title='Edit material', material=material)
+
+
 @main_bp.route('/courses/<int:course_id>/materials/<int:material_id>/delete', methods=['POST'])
 def material_delete(course_id, material_id):
+    import os
     from flask import redirect, url_for, flash, abort
     from flask_login import current_user
 
@@ -229,6 +296,8 @@ def material_delete(course_id, material_id):
     )
     if not can_edit:
         abort(403)
+    if material.file_path and os.path.exists(material.file_path):
+        os.remove(material.file_path)
     db.session.delete(material)
     db.session.commit()
     flash('Material deleted.', 'success')

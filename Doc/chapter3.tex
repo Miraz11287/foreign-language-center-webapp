@@ -1,61 +1,242 @@
 \phantomsection
-\section*{Глава 3. Разработка веб-приложения}
-\addcontentsline{toc}{section}{Глава 3. Разработка веб-приложения}
+\section*{Глава 3. Реализация веб-приложения}
+\addcontentsline{toc}{section}{Глава 3. Реализация веб-приложения}
 \stepcounter{section}
 
-% NOTE: Приведённые материалы являются примером применения основных  
-% синтаксических конструкций системы верстки LaTeX. Не стоит рассматривать
-% их как эталонный пример курсового проекта.
+\subsection{Инициализация приложения и развёртывание}
 
-\subsection{Разработка базовой структуры приложения и вёрстка}
+Приложение построено по паттерну Application Factory: функция
+\texttt{create\_app()} создаёт экземпляр Flask, подключает расширения
+SQLAlchemy, Flask-Migrate, Flask-Login и CSRFProtect, регистрирует пять
+блупринтов и устанавливает контекстный процессор, передающий во все
+шаблоны количество непрочитанных уведомлений текущего пользователя.
 
-В соответствии с задачей 3.1, была реализована компонентная структура фронтенд-части
-на базе библиотеки \textbf{React.js}. Использование хуков (\textit{Hooks}) позволило
-эффективно управлять состоянием формы заказа. Пример базового компонента представлен
-в листинге~\ref{lst:component}.
+\begin{lstlisting}[caption={Функция Application Factory (app/\_\_init\_\_.py)}, label={lst:create_app}]
+def create_app(config_name=None):
+    if config_name is None:
+        config_name = os.environ.get('FLASK_ENV', 'default')
 
-\begin{lstlisting}[caption={Пример структуры компонента карточки заказа}, label={lst:component}]
-// Комментарий 
-const OrderCard = ({ order }) => {
-  return (
-    <div className="order-card">
-      <h3>Заказ #{order.id}</h3>
-      <p>Адрес: {order.address}</p>
-      <button onClick={() => addToRoute(order.id)}>
-        Добавить в маршрут
-      </button>
-    </div>
-  );
-};
+    app = Flask(__name__)
+    app.config.from_object(config[config_name])
+
+    db.init_app(app);  migrate.init_app(app, db)
+    login_manager.init_app(app);  csrf.init_app(app)
+
+    from app.main        import main_bp
+    from app.auth        import auth_bp
+    from app.admin       import admin_bp
+    from app.teacher     import teacher_bp
+    from app.notifications import notifications_bp
+
+    app.register_blueprint(main_bp)
+    app.register_blueprint(auth_bp,           url_prefix='/auth')
+    app.register_blueprint(admin_bp,          url_prefix='/admin')
+    app.register_blueprint(teacher_bp,        url_prefix='/teacher')
+    app.register_blueprint(notifications_bp,  url_prefix='/notifications')
+
+    @app.context_processor
+    def inject_notifications():
+        if current_user.is_authenticated:
+            count = Notification.query.filter_by(
+                user_id=current_user.id, is_read=False
+            ).count()
+            return {'unread_count': count}
+        return {'unread_count': 0}
+
+    return app
 \end{lstlisting}
 
-\subsection{Реализация модуля авторизации}
+Конфигурация передаётся через переменные окружения (\texttt{.env}): строка
+подключения к PostgreSQL, секретный ключ сессии и корневой путь файлового
+хранилища. Это позволяет запускать приложение в разных средах без
+изменения исходного кода.
 
-Согласно задаче 3.2, в системе реализована ролевая модель доступа. Для обеспечения
-безопасности используется протокол \textbf{JWT} (JSON Web Token). При входе в
-систему сервер генерирует токен, содержащий поле \texttt{role}, которое может
-принимать значения \texttt{'dispatcher'} или \texttt{'courier'}.
+Среда выполнения описана в \texttt{docker-compose.yml}~\cite{docker_docs}
+и включает два сервиса: \textbf{db} (PostgreSQL~16~\cite{postgresql_docs},
+данные сохраняются в именованном томе) и \textbf{web} (Flask~3~\cite{flask_docs}
+с Gunicorn, Python-код запекается в образ при сборке).
+Миграции схемы управляются через Flask-Migrate (Alembic); команда
+\texttt{flask db upgrade} выполняется при старте контейнера без пересборки образа.
 
-\subsection{Интеграция картографических сервисов}
+\subsection{Аутентификация и ролевая модель}
 
-Ключевым этапом разработки (задача 3.4) стала интеграция API \linebreak \textbf{OpenStreetMap}
-через библиотеку \textit{Leaflet}. Для решения транспортной задачи был выбран
-жадный алгоритм с последующей оптимизацией методом локального поиска.
+Регистрация и вход реализованы в блупринте \texttt{auth}. Пароль
+хешируется функцией \texttt{generate\_password\_hash} из модуля
+\texttt{werkzeug.security} (алгоритм pbkdf2-sha256) и не хранится
+в открытом виде. После входа Flask-Login
+сохраняет идентификатор пользователя в подписанной серверной сессии
+и предоставляет объект \texttt{current\_user} во всех маршрутах и шаблонах.
 
-Данные о маршруте передаются в формате JSON (см. листинг~\ref{lst:route_json}).
+Контроль доступа реализован декораторами, определёнными в модуле
+\texttt{app/auth/decorators.py} (листинг~\ref{lst:decorators}).
 
-\begin{lstlisting}[float, floatplacement=ht!, caption={Структура данных оптимизированного маршрута}, label={lst:route_json}]
-{
-  "route_id": "r-101",
-  "courier_id": "u-45",
-  "waypoints": [
-    {"lat": 55.75, "lng": 37.61, "sequence": 1},
-    {"lat": 55.80, "lng": 37.70, "sequence": 2}
-  ],
-  "total_distance_km": 12.4
-}
+\begin{lstlisting}[caption={Декораторы ролевого доступа (app/auth/decorators.py)}, label={lst:decorators}]
+def admin_required(f):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.is_admin():
+            abort(403)
+        return f(*args, **kwargs)
+    return wrapped
+
+def teacher_required(f):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        if not current_user.is_authenticated or not (
+            current_user.is_teacher() or current_user.is_admin()
+        ):
+            abort(403)
+        return f(*args, **kwargs)
+    return wrapped
 \end{lstlisting}
 
-Как видно из листинга~\ref{lst:route_json}, каждая точка содержит порядковый
-номер (\texttt{sequence}), что позволяет курьеру следовать по оптимальному пути,
-рассчитанному на сервере.
+Декораторы \texttt{@admin\_required} и \texttt{@teacher\_required}
+применяются к маршрутам блупринтов \texttt{admin} и \texttt{teacher}
+соответственно; при нарушении прав Flask возвращает HTTP-код~403.
+
+\subsection{Каталог курсов и расписание занятий}
+
+Каталог (\texttt{/courses}) поддерживает одновременную фильтрацию
+по языку, уровню владения и полнотекстовый поиск по названию и описанию
+курса через оператор \texttt{ilike} SQLAlchemy~\cite{sqlalchemy_docs}.
+Все три параметра передаются как query-строка и могут комбинироваться.
+
+Расписание (\texttt{/schedule}) реализует недельный вид: по умолчанию
+отображается текущая неделя, кнопки навигации передают параметр
+\texttt{week} в формате \texttt{YYYY-MM-DD}. Занятия выбираются из базы
+данных для диапазона \texttt{[week\_start, week\_start + 7 дней)} и
+группируются по дням в словаре Python. Дополнительно доступна фильтрация
+по языку, уровню и конкретному преподавателю; идентификаторы занятий,
+на которые студент уже записан, передаются в шаблон отдельным множеством
+для корректного отображения кнопок.
+
+\subsection{Запись на занятия и контроль вместимости}
+
+Маршрут \texttt{POST /lessons/<id>/enroll} реализует запись студента
+на занятие с проверкой вместимости и дедупликацией. Если запись для
+данной пары \texttt{(student\_id, lesson\_id)} уже существует
+со статусом \texttt{cancelled}, она реактивируется без создания
+дублирующей строки; при исчерпании мест возвращается информативное
+сообщение (листинг~\ref{lst:enroll}).
+
+\begin{lstlisting}[caption={Маршрут записи на занятие (app/main/routes.py)}, label={lst:enroll}]
+@main_bp.route('/lessons/<int:lesson_id>/enroll', methods=['POST'])
+def enroll(lesson_id):
+    lesson = db.session.get(Lesson, lesson_id)
+    existing = Enrollment.query.filter_by(
+        student_id=current_user.id, lesson_id=lesson_id
+    ).first()
+
+    if existing and existing.status == EnrollmentStatus.active:
+        flash('You are already enrolled in this lesson.', 'info')
+    elif lesson.is_full:
+        flash('This lesson is full.', 'error')
+    else:
+        if existing:
+            existing.status = EnrollmentStatus.active
+        else:
+            db.session.add(Enrollment(
+                student_id=current_user.id, lesson_id=lesson_id,
+            ))
+        db.session.commit()
+        flash(f'Enrolled in {lesson.course.name}.', 'success')
+
+    return redirect(url_for('main.schedule', week=week))
+\end{lstlisting}
+
+Свойство \texttt{lesson.is\_full} вычисляется динамически на основе
+количества активных записей и поля \texttt{capacity}, не требуя
+хранения отдельного счётчика в базе данных.
+
+\subsection{Учебные материалы и экспорт успеваемости}
+
+Учебные материалы прикрепляются к курсам с возможностью файлового
+вложения. При загрузке файл сохраняется под уникальным UUID-именем
+в директорию \texttt{/app/uploads/materials/}; оригинальное имя файла
+фиксируется в поле \texttt{file\_name} для использования при скачивании
+(листинг~\ref{lst:upload}).
+
+\begin{lstlisting}[caption={Сохранение загружаемого файла (app/main/routes.py)}, label={lst:upload}]
+UPLOAD_FOLDER = '/app/uploads/materials'
+
+def _save_file(f):
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    ext  = f.filename.rsplit('.', 1)[1].lower()
+    path = os.path.join(UPLOAD_FOLDER, f'{uuid.uuid4().hex}.{ext}')
+    f.save(path)
+    return f.filename, path
+\end{lstlisting}
+
+UUID-именование файлов на диске исключает коллизии при загрузке
+одноимённых файлов разными пользователями и скрывает внутреннюю
+структуру хранилища.
+
+Маршрут GET /teacher/lessons/<id>/grades/export формирует
+CSV-ответ с оценками и посещаемостью всех записавшихся студентов.
+Ответ отдаётся через \texttt{flask.Response} с заголовком
+\texttt{Content-Disposition: attachment}, что инициирует скачивание
+файла в браузере без промежуточного сохранения на сервере.
+
+\subsection{Система уведомлений}
+
+Внутренние уведомления хранятся в таблице \texttt{notifications}.
+Сервер записывает строки при наступлении событий: одобрении или
+отклонении заявки на роль преподавателя, выставлении оценки и других
+действиях. Контекстный процессор передаёт счётчик непрочитанных
+уведомлений во все шаблоны; он отображается на иконке колокольчика
+в навигации.
+
+На клиенте реализован JS polling: каждые 30 секунд браузер
+обращается к эндпоинту \texttt{GET /notifications/api/poll}, который
+возвращает JSON с общим числом непрочитанных и списком новых уведомлений
+с момента последнего запроса (листинг~\ref{lst:poll}).
+
+\begin{lstlisting}[caption={Эндпоинт polling уведомлений (app/notifications/routes.py)}, label={lst:poll}]
+@notifications_bp.route('/api/poll')
+@login_required
+def poll():
+    last_id   = session.get('last_notif_id', 0)
+    new_notes = Notification.query.filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read == False,
+        Notification.id > last_id,
+    ).order_by(Notification.id.asc()).all()
+
+    if new_notes:
+        session['last_notif_id'] = new_notes[-1].id
+
+    unread_total = Notification.query.filter_by(
+        user_id=current_user.id, is_read=False
+    ).count()
+
+    return jsonify({
+        'unread': unread_total,
+        'new': [{'id': n.id, 'message': n.message,
+                 'link': n.link} for n in new_notes],
+    })
+\end{lstlisting}
+
+Новые уведомления отображаются в виде всплывающих toast-сообщений
+с автоматическим закрытием через 5 секунд и анимированной полосой
+прогресса. Счётчик на иконке колокольчика обновляется без перезагрузки
+страницы.
+
+\subsection{Доступность исходного кода}
+
+Исходный код веб-приложения опубликован в открытом репозитории на GitHub
+и доступен по адресу:
+
+\begin{center}
+    \url{https://github.com/Miraz11287/foreign-language-center-webapp}.
+\end{center}
+
+Репозиторий содержит Flask-приложение, конфигурацию Docker Compose,
+Alembic-миграции и LaTeX-документацию. Файлы загружаемых учебных
+материалов исключены из репозитория через \texttt{.gitignore},
+поскольку являются пользовательским контентом.
+
+Развёрнутая версия приложения доступна по адресу:
+
+\begin{center}
+    \url{https://langcenter.digitaldrugs.tech/}.
+\end{center}

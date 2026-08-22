@@ -3,106 +3,414 @@
 \addcontentsline{toc}{section}{Глава 2. Проектирование веб-приложения}
 \stepcounter{section}
 
-% NOTE: Приведённые материалы являются примером применения основных  
-% синтаксических конструкций системы верстки LaTeX. Не стоит рассматривать
-% их как эталонный пример курсового проекта.
+\subsection{Анализ целевой аудитории и ролевая модель}
 
-\subsection{Анализ целевой аудитории}
+Разрабатываемое приложение предназначено для трёх категорий пользователей языкового
+центра, каждая из которых имеет собственные цели и модель использования системы.
 
-Основными пользователями разрабатываемой системы являются сотрудники логистических
-компаний. Выделяются две ключевые роли:
+\textbf{Студенты} - основные потребители образовательных услуг. Им необходимо
+просматривать актуальное расписание занятий, самостоятельно записываться на курсы
+с учётом доступных мест, отслеживать собственную успеваемость и посещаемость,
+а также получать учебные материалы. Для данной группы важны простота навигации
+и наличие личного кабинета с агрегированными показателями прогресса.
 
-\begin{itemize}
-	\item \textbf{Диспетчер-логист} --- сотрудник, ответственный за распределение
-	      заказов и контроль их выполнения в реальном времени.
-	\item \textbf{Курьер} --- конечный исполнитель, использующий мобильную
-	      версию приложения для навигации по маршруту.
-\end{itemize}
+\textbf{Преподаватели} - ведут занятия и несут ответственность за оценивание
+студентов. Нуждаются в удобном интерфейсе для просмотра списка записавшихся
+на конкретное занятие, выставления оценок и отметок о посещаемости, публикации
+учебных материалов и экспорта журнала успеваемости.
 
-Для каждой роли проведено профилирование по методу персонажей (Personas) для
-минимизации когнитивной нагрузки на интерфейс.
+\textbf{Администраторы} - управляют учебным процессом и структурой данных.
+Отвечают за создание и редактирование курсов, формирование расписания занятий,
+управление учётными записями пользователей, назначение ролей и рассмотрение заявок
+студентов на получение роли преподавателя.
 
-\subsection{Описание функциональности приложения}
+Исходя из описания аудитории, в системе определены четыре уровня доступа.
 
-Функциональные возможности системы определяются через взаимодействие пользователя
-с системой. Основной бизнес-кейс представлен в виде \textit{User Story}: «Я, как
-диспетчер, хочу импортировать список адресов, чтобы система автоматически построила
-кратчайший маршрут для 5 курьеров».
+\textbf{Гость} - неаутентифицированный посетитель. Может просматривать каталог
+курсов и общедоступную информацию, но не имеет доступа к расписанию, записи
+на занятия и личному кабинету.
 
-На рисунке~\ref{fig:use_case} представлена диаграмма вариантов использования
-(Use Case).
+\textbf{Студент (Student)} - зарегистрированный участник с базовым уровнем
+доступа. Может просматривать расписание, записываться на занятия и отменять запись,
+оставлять оценки и комментарии к курсам, просматривать учебные материалы и личный
+прогресс, а также подавать заявку на роль преподавателя.
+
+\textbf{Преподаватель (Teacher)} - роль, назначаемая администратором или
+присваиваемая после одобрения заявки. Обладает всеми правами студента,
+а также может выставлять оценки и отметки посещаемости, публиковать и редактировать
+учебные материалы, экспортировать журнал успеваемости в формате CSV.
+
+\textbf{Администратор (Admin)} - привилегированная роль с полным доступом
+ко всем разделам системы. Управляет курсами, занятиями и пользователями,
+назначает роли, рассматривает заявки на роль преподавателя.
+
+Матрица прав доступа по основным операциям системы приведена
+в таблице~\ref{tab:roles}.
+
+\begin{table}[ht!]
+    \centering
+    \caption{Матрица прав доступа по ролям}
+    \label{tab:roles}
+    \small
+    \begin{tabularx}{\textwidth}{|X|c|c|c|c|}
+        \hline
+        \textbf{Операция} &
+        \textbf{Гость} &
+        \textbf{Студент} &
+        \textbf{Препод.} &
+        \textbf{Администр.} \\ \hline
+        Просмотр каталога курсов                & Да  & Да  & Да  & Да  \\ \hline
+        Регистрация / вход в систему            & Да  & --  & --  & --  \\ \hline
+        Просмотр расписания занятий             & --  & Да  & Да  & Да  \\ \hline
+        Запись на занятие / отмена записи       & --  & Да  & --  & --  \\ \hline
+        Просмотр учебных материалов             & --  & Да  & Да  & Да  \\ \hline
+        Оценка курса и комментирование          & --  & Да  & Да  & Да  \\ \hline
+        Просмотр личного прогресса              & --  & Да  & --  & --  \\ \hline
+        Подача заявки на роль преподавателя     & --  & Да  & --  & --  \\ \hline
+        Выставление оценок и посещаемости       & --  & --  & Да  & Да  \\ \hline
+        Публикация и редактирование материалов  & --  & --  & Да  & Да  \\ \hline
+        Экспорт журнала успеваемости (CSV)      & --  & --  & Да  & Да  \\ \hline
+        Управление курсами (CRUD)               & --  & --  & --  & Да  \\ \hline
+        Управление занятиями (CRUD)             & --  & --  & --  & Да  \\ \hline
+        Управление пользователями и ролями      & --  & --  & --  & Да  \\ \hline
+        Рассмотрение заявок на роль преподавателя & -- & --  & --  & Да  \\ \hline
+    \end{tabularx}
+\end{table}
+
+\subsection{Функциональные требования}
+
+На основе ролевой модели выделены ключевые варианты использования системы,
+представленные в виде диаграммы на рисунке~\ref{fig:use_case}.
 
 \begin{figure}[ht!]
-	\centering
-	\includegraphics[width=0.8\textwidth]{use_case_diagram}
-	\caption{Диаграмма вариантов использования системы}
-	\label{fig:use_case}
+    \centering
+    \includegraphics[width=0.65\textwidth]{use_case_diagram}
+    \caption{Диаграмма вариантов использования LangCenter}
+    \label{fig:use_case}
 \end{figure}
+
+Диаграмма фиксирует взаимодействие четырёх акторов со следующими группами
+вариантов использования:
+
+\begin{itemize}
+    \item \textbf{каталог и регистрация} - просмотр курсов и страниц курса
+          доступен всем; регистрация и вход - только гостям;
+    \item \textbf{запись и расписание} - просмотр расписания, запись
+          на занятие и её отмена (студент и выше);
+    \item \textbf{учебные материалы} - просмотр и скачивание (студент),
+          публикация, редактирование и удаление (преподаватель и выше);
+    \item \textbf{успеваемость} - просмотр личного прогресса (студент),
+          выставление оценок и экспорт журнала в CSV (преподаватель и выше);
+    \item \textbf{администрирование} - полный CRUD курсов, занятий,
+          управление ролями и рассмотрение заявок (только администратор).
+\end{itemize}
+
+Перечень URL-маршрутов приложения, соответствующих вариантам использования,
+приведён в таблице~\ref{tab:routes}.
+
+\begin{table}[ht!]
+    \centering
+    \caption{Маршруты веб-приложения LangCenter}
+    \label{tab:routes}
+    \small
+    \begin{tabularx}{\textwidth}{|p{1.5cm}|p{5.2cm}|p{2.4cm}|X|}
+        \hline
+        \textbf{Метод} & \textbf{URL} & \textbf{Мин. роль} & \textbf{Назначение} \\ \hline
+        GET            & /                                          & Гость       & Главная страница \\ \hline
+        GET/ POST       & /auth/register                             & Гость       & Регистрация \\ \hline
+        GET/ POST       & /auth/login                                & Гость       & Вход в систему \\ \hline
+        GET            & /auth/logout                               & Студент     & Выход \\ \hline
+        GET            & /courses                                   & Гость       & Каталог курсов с поиском и фильтрами \\ \hline
+        GET            & /courses/\textlangle{}id\textrangle{}      & Гость       & Страница курса: материалы, оценки, комментарии \\ \hline
+        GET            & /schedule                                  & Студент     & Недельное расписание с фильтрами \\ \hline
+        POST           & /lessons/\textlangle{}id\textrangle{}/enroll   & Студент & Запись на занятие \\ \hline
+        POST           & /lessons/\textlangle{}id\textrangle{}/unenroll & Студент & Отмена записи \\ \hline
+        GET            & /my-lessons                                & Студент     & Список собственных занятий \\ \hline
+        GET            & /my-progress                               & Студент     & Личная статистика успеваемости \\ \hline
+        GET/ POST       & /request-teacher                           & Студент     & Заявка на роль преподавателя \\ \hline
+        GET            & /teacher/                                  & Преподав.   & Личный кабинет преподавателя \\ \hline
+        GET/ POST       & /teacher/lessons/\textlangle{}id\textrangle{}/grades & Преподав. & Выставление оценок и посещаемости \\ \hline
+        GET            & /teacher/lessons/\textlangle{}id\textrangle{}/grades /export & Преподав. & Экспорт журнала в CSV \\ \hline
+        GET            & /admin/                                    & Администр.  & Панель администратора (статистика) \\ \hline
+        GET/ POST       & /admin/courses/new                         & Администр.  & Создание курса \\ \hline
+        GET/ POST       & /admin/lessons/new                         & Администр.  & Создание занятия \\ \hline
+        POST           & /admin/users/\textlangle{}id\textrangle{}/role & Администр. & Смена роли пользователя \\ \hline
+        POST           & /admin/requests/\textlangle{}id\textrangle{}/approve & Администр. & Одобрение заявки на преподавателя \\ \hline
+        GET            & /notifications/                            & Студент     & Список уведомлений \\ \hline
+        GET            & /notifications/api/poll                    & Студент     & Polling новых уведомлений (JSON) \\ \hline
+    \end{tabularx}
+\end{table}
 
 \subsection{Проектирование модели данных}
 
-При выборе архитектуры базы данных был проведен сравнительный анализ эффективности
-различных решений, опирающийся на данные о производительности современных
-СУБД~\cite{petrov2024}.
+База данных приложения построена на реляционной модели и включает десять сущностей.
+ER-диаграмма, отражающая состав полей и связи между таблицами, представлена
+на рисунке~\ref{fig:er_diagram}.
 
-Структура таблицы заказов представлена в табл.~\ref{tab:db_orders}.
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=\textwidth]{ER}
+    \caption{ER-диаграмма базы данных LangCenter}
+    \label{fig:er_diagram}
+\end{figure}
 
-\begin{longtable}{|l|l|p{3.5cm}|p{5.5cm}|}
-	\caption{Структура таблицы заказов (\texttt{orders})} \label{tab:db_orders}                \\
+Связи между основными сущностями имеют следующий характер:
 
-	\hline
-	\textbf{Поле}  & \textbf{Тип} & \textbf{Ограничение} & \textbf{Описание}                   \\ \hline
-	\endfirsthead % Заголовок на первой странице
+\begin{itemize}
+    \item \texttt{users} $\leftrightarrow$ \texttt{courses}: один преподаватель
+          ведёт несколько курсов (1:N, внешний ключ \texttt{teacher\_id});
+    \item \texttt{courses} $\leftrightarrow$ \texttt{lessons}: один курс включает
+          несколько занятий (1:N, внешний ключ \texttt{course\_id});
+    \item \texttt{lessons} $\leftrightarrow$ \texttt{enrollments}: на одно занятие
+          записываются несколько студентов (1:N, внешний ключ \texttt{lesson\_id});
+    \item \texttt{users} $\leftrightarrow$ \texttt{enrollments}: один студент
+          может быть записан на несколько занятий; пара (\texttt{student\_id},
+          \texttt{lesson\_id}) уникальна;
+    \item \texttt{enrollments} $\leftrightarrow$ \texttt{grades}: каждая запись
+          может иметь одну оценку (1:1, внешние ключи \texttt{student\_id}
+          и \texttt{lesson\_id}).
+\end{itemize}
 
-	\tabcont{\ref{tab:db_orders}} % команда для надписи "Продолжение таблицы"
-	\textbf{Поле}  & \textbf{Тип} & \textbf{Ограничение} & \textbf{Описание}                   \\ \hline
-	\endhead % Заголовок на всех последующих страницах
+Структура таблицы \texttt{users} представлена в таблице~\ref{tab:db_users}.
 
-	\hline
-	\endfoot % Линия внизу страницы (кроме последней)
-
-	\hline
-	\endlastfoot % Линия в самом конце таблицы
-
-	id             & UUID         & PRIMARY KEY          & Уникальный идентификатор заказа     \\ \hline
-	customer\_id   & UUID         & FOREIGN KEY          & Ссылка на таблицу клиентов          \\ \hline
-	address        & TEXT         & NOT NULL             & Полный адрес доставки               \\ \hline
-	lat            & NUMERIC      & NOT NULL             & Широта точки (WGS-84)               \\ \hline
-	lng            & NUMERIC      & NOT NULL             & Долгота точки (WGS-84)              \\ \hline
-	weight         & FLOAT        & CHECK > 0            & Вес груза, кг                       \\ \hline
-	volume         & FLOAT        & NOT NULL             & Объем груза, м$^3$                  \\ \hline
-	time\_from     & TIME         & NOT NULL             & Начало окна доставки                \\ \hline
-	time\_to       & TIME         & NOT NULL             & Конец окна доставки                 \\ \hline
-	priority       & INT          & DEFAULT 1            & Приоритет (1--5)                    \\ \hline
-	status         & VARCHAR      & 'pending'            & Статус (ожидание, в пути, выполнен) \\ \hline
-	courier\_id    & UUID         & NULL                 & Назначенный исполнитель             \\ \hline
-	created\_at    & TIMESTAMP    & DEFAULT NOW()        & Время создания записи               \\ \hline
-	updated\_at    & TIMESTAMP    & DEFAULT NOW()        & Время последнего изменения          \\ \hline
-	is\_fragile    & BOOLEAN      & FALSE                & Хрупкий груз                        \\ \hline
-	contact\_phone & VARCHAR      & NOT NULL             & Телефон получателя                  \\ \hline
-	price          & MONEY        & NOT NULL             & Стоимость доставки                  \\ \hline
-	external\_id   & VARCHAR      & UNIQUE               & ID из внешней системы (1C/ERP)      \\ \hline
-	notes          & TEXT         & NULL                 & Комментарий для курьера             \\ \hline
-	attempts       & INT          & DEFAULT 0            & Количество попыток доставки         \\ \hline
+{\small
+\begin{longtable}{|p{3.8cm}|p{2.8cm}|p{3.5cm}|p{4.4cm}|}
+    \caption{Структура таблицы пользователей (\texttt{users})}
+    \label{tab:db_users} \\
+    \hline
+    \textbf{Поле} & \textbf{Тип} & \textbf{Ограничение} & \textbf{Описание} \\ \hline
+    \endfirsthead
+    \tabcont{\ref{tab:db_users}}
+    \textbf{Поле} & \textbf{Тип} & \textbf{Ограничение} & \textbf{Описание} \\ \hline
+    \endhead
+    \hline \endfoot
+    \hline \endlastfoot
+    id            & INTEGER      & PRIMARY KEY, SERIAL        & Уникальный идентификатор \\ \hline
+    first\_name   & VARCHAR(64)  & NOT NULL                   & Имя пользователя \\ \hline
+    last\_name    & VARCHAR(64)  & NOT NULL                   & Фамилия пользователя \\ \hline
+    email         & VARCHAR(120) & UNIQUE, NOT NULL           & Адрес электронной почты \\ \hline
+    password\_hash & VARCHAR(256) & NOT NULL                  & Хеш пароля (werkzeug pbkdf2) \\ \hline
+    role          & VARCHAR(20)  & NOT NULL, DEFAULT 'student' & Роль: admin, teacher, student \\ \hline
+    created\_at   & TIMESTAMP    & DEFAULT NOW()              & Дата и время регистрации \\ \hline
 \end{longtable}
+}
 
+Структура таблицы \texttt{courses} представлена в таблице~\ref{tab:db_courses}.
 
-Общая стоимость маршрута для службы доставки рассчитывается следующим образом:
+{\small
+\begin{longtable}{|p{3.8cm}|p{2.8cm}|p{3.5cm}|p{4.4cm}|}
+    \caption{Структура таблицы курсов (\texttt{courses})}
+    \label{tab:db_courses} \\
+    \hline
+    \textbf{Поле} & \textbf{Тип} & \textbf{Ограничение} & \textbf{Описание} \\ \hline
+    \endfirsthead
+    \tabcont{\ref{tab:db_courses}}
+    \textbf{Поле} & \textbf{Тип} & \textbf{Ограничение} & \textbf{Описание} \\ \hline
+    \endhead
+    \hline \endfoot
+    \hline \endlastfoot
+    id          & INTEGER      & PRIMARY KEY, SERIAL         & Уникальный идентификатор курса \\ \hline
+    name        & VARCHAR(200) & NOT NULL                    & Название курса \\ \hline
+    language    & VARCHAR(64)  & NOT NULL                    & Изучаемый язык \\ \hline
+    level       & VARCHAR(10)  & NOT NULL (A1--C2)           & Уровень владения языком \\ \hline
+    description & TEXT         & NULL                        & Описание курса \\ \hline
+    teacher\_id & INTEGER      & FK → users.id, NOT NULL     & Ссылка на преподавателя \\ \hline
+    is\_active  & BOOLEAN      & DEFAULT TRUE                & Флаг активности курса \\ \hline
+    created\_at & TIMESTAMP    & DEFAULT NOW()               & Дата создания \\ \hline
+\end{longtable}
+}
+
+Структура таблицы \texttt{lessons} представлена в таблице~\ref{tab:db_lessons}.
+
+\begin{table}[ht!]
+    \centering
+    \caption{Структура таблицы занятий (\texttt{lessons})}
+    \label{tab:db_lessons}
+    \small
+    \begin{tabularx}{\textwidth}{|p{3.0cm}|p{2.5cm}|p{3.5cm}|X|}
+        \hline
+        \textbf{Поле} & \textbf{Тип} & \textbf{Ограничение} & \textbf{Описание} \\ \hline
+        id           & INTEGER   & PRIMARY KEY, SERIAL      & Уникальный идентификатор \\ \hline
+        course\_id   & INTEGER   & FK → courses.id, NOT NULL & Ссылка на курс \\ \hline
+        teacher\_id  & INTEGER   & FK → users.id, NOT NULL  & Ссылка на преподавателя \\ \hline
+        starts\_at   & TIMESTAMP & NOT NULL                 & Дата и время начала занятия \\ \hline
+        duration\_min & INTEGER  & NOT NULL, DEFAULT 60     & Продолжительность, мин \\ \hline
+        room         & VARCHAR(32) & NULL                   & Номер аудитории \\ \hline
+        capacity     & INTEGER   & NOT NULL, DEFAULT 10     & Максимальное число мест \\ \hline
+    \end{tabularx}
+\end{table}
+
+Структура таблицы \texttt{enrollments} представлена в таблице~\ref{tab:db_enrollments}.
+
+\begin{table}[ht!]
+    \centering
+    \caption{Структура таблицы записей (\texttt{enrollments})}
+    \label{tab:db_enrollments}
+    \small
+    \begin{tabularx}{\textwidth}{|p{3.0cm}|p{2.5cm}|p{3.5cm}|X|}
+        \hline
+        \textbf{Поле} & \textbf{Тип} & \textbf{Ограничение} & \textbf{Описание} \\ \hline
+        id          & INTEGER   & PRIMARY KEY, SERIAL                          & Уникальный идентификатор \\ \hline
+        student\_id & INTEGER   & FK → users.id, NOT NULL                      & Ссылка на студента \\ \hline
+        lesson\_id  & INTEGER   & FK → lessons.id, NOT NULL                    & Ссылка на занятие \\ \hline
+        status      & VARCHAR   & DEFAULT 'active'                             & Статус: active, cancelled \\ \hline
+        enrolled\_at & TIMESTAMP & DEFAULT NOW()                               & Дата и время записи \\ \hline
+        \multicolumn{4}{|l|}{UNIQUE (student\_id, lesson\_id)} \\ \hline
+    \end{tabularx}
+\end{table}
+
+Структура таблицы \texttt{grades} представлена в таблице~\ref{tab:db_grades}.
+
+\begin{table}[ht!]
+    \centering
+    \caption{Структура таблицы оценок (\texttt{grades})}
+    \label{tab:db_grades}
+    \small
+    \begin{tabularx}{\textwidth}{|p{3.0cm}|p{2.5cm}|p{3.5cm}|X|}
+        \hline
+        \textbf{Поле} & \textbf{Тип} & \textbf{Ограничение} & \textbf{Описание} \\ \hline
+        id          & INTEGER   & PRIMARY KEY, SERIAL       & Уникальный идентификатор \\ \hline
+        student\_id & INTEGER   & FK → users.id, NOT NULL   & Ссылка на студента \\ \hline
+        lesson\_id  & INTEGER   & FK → lessons.id, NOT NULL & Ссылка на занятие \\ \hline
+        score       & FLOAT     & NULL, CHECK (0--100)      & Балл (0--100) \\ \hline
+        attended    & BOOLEAN   & DEFAULT FALSE             & Отметка о посещении \\ \hline
+        notes       & TEXT      & NULL                      & Комментарий преподавателя \\ \hline
+        created\_at & TIMESTAMP & DEFAULT NOW()             & Дата выставления \\ \hline
+        \multicolumn{4}{|l|}{UNIQUE (student\_id, lesson\_id)} \\ \hline
+    \end{tabularx}
+\end{table}
+
+Помимо перечисленных, база данных включает вспомогательные таблицы:
+\texttt{course\_materials} (учебные материалы с возможностью файлового вложения),
+\texttt{course\_ratings} (оценки курса по шкале 1--5, уникальные для пары
+пользователь/курс), \texttt{course\_comments} (комментарии к курсам),
+\texttt{notifications} (внутренние уведомления с флагом прочтения) и
+\texttt{teacher\_requests} (заявки на роль преподавателя со статусами
+\texttt{pending}, \texttt{approved}, \texttt{rejected}).
+
+Средний балл студента по курсу вычисляется как среднее арифметическое
+всех выставленных оценок:
 
 \begin{equation}
-	C_{total} = \sum_{i=1}^{n} (L_i \cdot P_{fuel} + T_i \cdot W_{hour}) + S_{fixed},
-	\label{eq:total_cost}
+    \bar{P} = \frac{1}{N} \sum_{i=1}^{N} s_i,
+    \label{eq:avg_grade}
 \end{equation}
 
 \begin{where}
-	\item $L_i$~--- протяженность $i$-го участка маршрута, км;
-	\item $P_{fuel}$~--- стоимость топлива на 1 км пути;
-	\item $T_i$~--- время в пути на участке;
-	\item $W_{hour}$~--- почасовая ставка оплаты труда курьера;
-	\item $S_{fixed}$~--- постоянные издержки на обслуживание автопарка.
+    \item $s_i$~--- балл за $i$-е занятие (от 0 до 100);
+    \item $N$~--- количество занятий, за которые выставлена оценка.
 \end{where}
 
+\subsection{Архитектура приложения}
 
-\subsection{Разработка макетов страниц}
+Приложение построено по трёхуровневой архитектуре
+(рисунок~\ref{fig:architecture}): клиентский уровень (браузер), серверный
+уровень (Flask-приложение) и уровень хранения данных (PostgreSQL и файловая
+система для учебных материалов).
 
-*Макеты страниц*
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=0.88\textwidth]{app_arch}
+    \caption{Архитектура приложения LangCenter}
+    \label{fig:architecture}
+\end{figure}
+
+Серверный уровень организован по шаблону Application Factory:
+функция \texttt{create\_app()} создаёт и конфигурирует экземпляр приложения,
+подключает расширения (SQLAlchemy, Migrate, LoginManager, CSRFProtect)
+и регистрирует блупринты. Маршруты сгруппированы в шесть блупринтов:
+main (каталог, расписание, запись, прогресс), auth
+(аутентификация, профиль), admin (панель администратора),
+teacher (оценивание, экспорт), notifications (уведомления)
+и соответствующие шаблоны Jinja2.
+
+Структура каталога проекта показана в листинге~\ref{lst:structure}.
+
+\begin{lstlisting}[caption={Структура проекта LangCenter}, label={lst:structure}]
+mirs/
+  App/
+    app/
+      __init__.py        # Application Factory
+      extensions.py      # db, migrate, login_manager, csrf
+      config.py          # DevelopmentConfig / ProductionConfig
+      commands.py        # flask seed (тестовые данные)
+      models/
+        user.py          # User, Role enum
+        course.py        # Course, LanguageLevel enum
+        lesson.py        # Lesson
+        enrollment.py    # Enrollment, EnrollmentStatus
+        grade.py         # Grade
+        course_material.py  # CourseMaterial (файлы)
+        course_rating.py    # CourseRating
+        course_comment.py   # CourseComment
+        notification.py     # Notification
+        teacher_request.py  # TeacherRequest
+      main/
+        routes.py        # Каталог, расписание, запись, прогресс
+        forms.py         # MaterialForm, TeacherRequestForm
+      auth/
+        routes.py        # register, login, logout, profile
+        forms.py         # LoginForm, RegisterForm
+        decorators.py    # admin_required, teacher_required
+      admin/
+        routes.py        # CRUD курсов, занятий, пользователей
+        forms.py         # CourseForm, LessonForm
+      teacher/
+        routes.py        # grade_lesson, export_grades
+      notifications/
+        routes.py        # index, poll, mark_read
+        utils.py         # notify()
+      templates/
+        base.html        # Базовый шаблон (navbar, toast)
+        ...
+      static/
+        css/style.css    # Кастомные стили (sketchy-дизайн)
+    migrations/          # Alembic-миграции
+    Dockerfile
+    requirements.txt
+  docker-compose.yml
+  .env
+\end{lstlisting}
+
+\subsection{Проектирование интерфейса}
+
+Интерфейс приложения проектировался из расчёта трёх ключевых сценариев:
+просмотр каталога и запись на занятие, работа преподавателя с оценками,
+управление структурой центра администратором.
+
+\textbf{Каталог курсов} - основная точка входа. Страница содержит строку
+текстового поиска по названию и описанию, фильтры по языку и уровню владения,
+сетку карточек курсов с названием, уровнем, именем преподавателя и средним
+рейтингом. При наличии активного поиска отображается количество найденных
+результатов.
+
+\textbf{Страница курса} - детальная информация: описание, список учебных
+материалов (с возможностью скачивания файлов), ближайшие занятия с кнопкой
+записи, блок звёздного рейтинга и секция комментариев. Для преподавателя
+и администратора дополнительно отображаются кнопки управления материалами.
+
+\textbf{Расписание} - недельный вид с навигацией по неделям и фильтрами
+по языку, уровню и преподавателю. Занятия отображаются в виде карточек
+с указанием времени, аудитории, количества доступных мест и кнопкой записи.
+
+\textbf{Журнал оценок} - доступен преподавателю. Таблица со списком
+записавшихся студентов, полями для ввода балла (0--100) и чекбоксом
+посещаемости. Кнопка экспорта в CSV расположена в верхнем правом углу.
+
+Макеты двух ключевых страниц - каталога курсов и расписания занятий -
+представлены на рисунках~\ref{fig:mockup_catalog} и~\ref{fig:mockup_schedule}
+соответственно.
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=0.82\textwidth]{catalog}
+    \caption{Макет страницы каталога курсов}
+    \label{fig:mockup_catalog}
+\end{figure}
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=0.82\textwidth]{calenfar}
+    \caption{Макет страницы расписания занятий}
+    \label{fig:mockup_schedule}
+\end{figure}
